@@ -1,0 +1,842 @@
+<title>元宝考据侦探实测报告</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@600;700&display=swap">
+<style>
+:root{
+  --paper:#f6f7f9; --sheet:#ffffff; --ink:#1b2a41; --ink2:#4a5568; --mute:#8a94a6; --rule:#e3e7ee;
+  --r-found:#1f7a4d; --r-part:#b7791f; --r-twist:#c2410c; --r-split:#6d28d9; --r-none:#6b7280;
+  --t-off:#1f7a4d; --t-wiki:#2b6cb0; --t-media:#4a5568; --t-comm:#b7791f; --t-farm:#c53030;
+  --serif:"Noto Serif SC","Songti SC",serif; --sans:"Noto Sans SC","Microsoft YaHei",system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){--paper:#11161f;--sheet:#18202c;--ink:#e6ebf2;--ink2:#b4bfcd;--mute:#7d8899;--rule:#2a3442;
+    --r-found:#4ade80;--r-part:#fbbf24;--r-twist:#fb923c;--r-split:#a78bfa;--r-none:#9ca3af;
+    --t-off:#4ade80;--t-wiki:#7cb3ec;--t-media:#b4bfcd;--t-comm:#fbbf24;--t-farm:#f87171;color-scheme:dark} }
+:root[data-theme="dark"]{--paper:#11161f;--sheet:#18202c;--ink:#e6ebf2;--ink2:#b4bfcd;--mute:#7d8899;--rule:#2a3442;
+    --r-found:#4ade80;--r-part:#fbbf24;--r-twist:#fb923c;--r-split:#a78bfa;--r-none:#9ca3af;
+    --t-off:#4ade80;--t-wiki:#7cb3ec;--t-media:#b4bfcd;--t-comm:#fbbf24;--t-farm:#f87171;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font:15px/1.7 var(--sans)}
+.wrap{max-width:920px;margin:0 auto;padding-block:32px 96px;padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px))}
+header h1{font:700 28px/1.3 var(--serif);margin:0 0 6px}
+header p{margin:0;color:var(--ink2);max-width:60ch}
+.box{background:var(--sheet);border:1px solid var(--rule);border-radius:10px;padding:20px;margin-top:20px}
+label{font-size:13px;color:var(--ink2)}
+textarea,input{width:100%;font:inherit;color:inherit;background:transparent;border:1px solid var(--rule);border-radius:6px;padding:10px 12px;margin:4px 0 12px}
+textarea{min-height:68px;resize:vertical}
+textarea:focus,input:focus,button:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid var(--t-wiki);outline-offset:2px}
+.row{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap}
+.row>div{flex:1;min-width:200px}
+button.main{font:inherit;font-weight:500;border:0;border-radius:6px;padding:10px 24px;background:var(--ink);color:var(--sheet);cursor:pointer;white-space:nowrap}
+button.main:disabled{opacity:.5;cursor:wait}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{font:inherit;font-size:13px;border:1px solid var(--rule);border-radius:99px;padding:2px 12px;cursor:pointer;color:var(--ink2);background:transparent}
+.chip:hover{border-color:var(--ink);color:var(--ink)}
+.status{font-size:12px;color:var(--mute);margin-top:12px}
+.log{font-size:13px;color:var(--ink2);margin-top:10px;white-space:pre-line;border-left:2px solid var(--rule);padding-left:12px}
+.log:empty{display:none}
+
+/* ===== 报告 ===== */
+.case{background:var(--sheet);border:1px solid var(--rule);border-radius:10px;margin-top:20px;overflow:hidden}
+.case-head{display:grid;grid-template-columns:1fr auto;gap:20px;padding:24px;border-bottom:1px solid var(--rule)}
+.case-kind{font-size:13px;color:var(--mute)}
+.case-claim{font:700 22px/1.5 var(--serif);margin:4px 0 12px}
+.case-sum{margin:0;font-size:16px;max-width:62ch}
+.tfu sup a,.case-sum sup a{font-size:11px;color:var(--t-wiki);text-decoration:none;padding:0 1px}
+.stamp{align-self:start;border:3px solid currentColor;border-radius:8px;padding:10px 16px;text-align:center;transform:rotate(-4deg);min-width:118px}
+.stamp b{display:block;font:700 22px/1.2 var(--serif)}
+.stamp span{font-size:12px}
+.v-found{color:var(--r-found)} .v-part{color:var(--r-part)} .v-twist{color:var(--r-twist)} .v-split{color:var(--r-split)} .v-none{color:var(--r-none)}
+.scale{display:flex;gap:4px;margin-top:10px}
+.scale i{flex:1;height:5px;border-radius:2px;background:var(--rule)}
+.scale i.on{background:currentColor}
+.sec{padding:20px 24px;border-bottom:1px solid var(--rule)}
+.sec:last-child{border-bottom:0}
+.sec h3{font:700 17px/1.4 var(--serif);margin:0 0 4px}
+.sec .hint{font-size:13px;color:var(--mute);margin:0 0 12px}
+.tfu{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.tfu>div{border-top:4px solid currentColor;padding-top:8px}
+.tfu h4{margin:0 0 6px;font-size:14px}
+.tfu ul{margin:0;padding-left:18px;color:var(--ink)}
+.tfu li{margin-bottom:4px}
+.tfu .empty{color:var(--mute);font-size:13px}
+.c-true{color:var(--r-found)} .c-false{color:var(--r-twist)} .c-unk{color:var(--r-none)}
+.map{overflow-x:auto;background:var(--paper);border-radius:8px;padding:12px;min-height:80px}
+.map svg{max-width:100%;height:auto}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{text-align:left;font-weight:500;color:var(--mute);font-size:12px;border-bottom:1px solid var(--rule);padding:6px 8px}
+td{border-bottom:1px solid var(--rule);padding:10px 8px;vertical-align:top}
+td.q{font-family:var(--serif);min-width:220px}
+.tag{display:inline-block;font-size:12px;line-height:18px;padding:0 7px;border-radius:4px;border:1px solid currentColor;white-space:nowrap}
+.st-支持{color:var(--r-found)} .st-反驳{color:var(--r-twist)} .st-相关{color:var(--r-none)}
+.t-官方{color:var(--t-off)} .t-百科{color:var(--t-wiki)} .t-媒体{color:var(--t-media)} .t-社区{color:var(--t-comm)} .t-问答农场{color:var(--t-farm)} .t-其他{color:var(--mute)}
+.ok{color:var(--r-found);font-size:12px} .bad{color:var(--t-farm);font-size:12px}
+td a,.src a{color:var(--ink);text-decoration:underline;text-decoration-color:var(--rule);text-underline-offset:3px}
+.mix{display:flex;height:12px;border-radius:3px;overflow:hidden;margin:6px 0 8px}
+.mix i{display:block;height:100%}
+.legend{display:flex;flex-wrap:wrap;gap:12px;font-size:13px;color:var(--ink2)}
+.legend b{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px;vertical-align:middle}
+.gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.gallery figure{margin:0;cursor:zoom-in}
+.gallery img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:6px;background:var(--paper);display:block}
+.gallery figcaption{font-size:12px;color:var(--ink2);margin-top:4px;line-height:1.4}
+.videos{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
+.videos iframe{width:100%;aspect-ratio:16/9;border:0;border-radius:6px;background:#000}
+.videos p{margin:4px 0 0;font-size:13px}
+dialog{border:0;padding:0;background:transparent;max-width:92vw}
+dialog img{max-width:92vw;max-height:84vh;display:block;border-radius:6px}
+dialog::backdrop{background:rgba(0,0,0,.75)}
+.timeline{list-style:none;margin:0;padding:0;border-left:2px solid var(--rule)}
+.timeline li{padding:0 0 10px 14px;position:relative;font-size:14px}
+.timeline li::before{content:"";position:absolute;left:-6px;top:8px;width:10px;height:10px;border-radius:50%;background:var(--sheet);border:2px solid var(--ink2)}
+.src{padding:10px 0;border-top:1px solid var(--rule)}
+.src p{margin:4px 0 0;font-size:14px;color:var(--ink2)}
+.src.low{opacity:.55}
+details summary{cursor:pointer;color:var(--ink2);font-size:14px}
+pre{white-space:pre-wrap;font-size:12px;color:var(--ink2)}
+/* 旧版规则模式用的样式 */
+.verdict{border-left:5px solid var(--mute);padding:4px 0 4px 14px} .verdict h2{margin:0;font:700 20px var(--serif)}
+.note{margin-top:10px;font-size:14px;background:var(--paper);padding:10px 12px;border-radius:6px}
+.ev{border-top:1px solid var(--rule);padding:12px 0} .ev p{margin:0;font-size:14px;color:var(--ink2)}
+.meta{font-size:12px;color:var(--mute);display:flex;gap:10px;flex-wrap:wrap}
+.steps{display:flex;flex-wrap:wrap;gap:8px;padding:0;list-style:none} .steps li{font-size:13px;border:1px solid var(--rule);border-radius:6px;padding:2px 10px}
+mark{background:rgba(214,170,60,.35);color:inherit}
+@media (max-width:640px){
+  .case-head{grid-template-columns:1fr} .stamp{justify-self:start}
+  .tfu{grid-template-columns:1fr}
+  td.q{min-width:0}
+  table{font-size:13px} td,th{padding:8px 4px}
+  td:first-child,th:first-child{display:none}
+}
+td:last-child,th:last-child,td:nth-child(3){white-space:nowrap}
+@media (prefers-reduced-motion:no-preference){
+  .stamp{animation:stamp .35s ease-out}
+  @keyframes stamp{from{transform:rotate(-4deg) scale(1.6);opacity:0}to{transform:rotate(-4deg) scale(1);opacity:1}}
+}
+.tabs{display:flex;gap:4px;margin-bottom:14px;border-bottom:1px solid var(--rule)}
+.tabs button{font:inherit;font-size:14px;background:none;border:0;border-bottom:3px solid transparent;padding:6px 14px;color:var(--ink2);cursor:pointer;margin-bottom:-1px}
+.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--ink);font-weight:500}
+.progress{background:var(--sheet);border:1px solid var(--rule);border-radius:10px;margin-top:20px;padding:24px;position:relative}
+.progress h3{font:700 17px/1.4 var(--serif);margin:0 0 14px}
+.pbar{height:6px;background:var(--rule);border-radius:3px;overflow:hidden;margin-bottom:18px}
+.pbar i{display:block;height:100%;width:4%;background:var(--ink);border-radius:3px;transition:width .5s ease}
+.psteps{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.psteps li{display:grid;grid-template-columns:26px 1fr auto;gap:10px;align-items:start;color:var(--mute)}
+.psteps li .dot{width:22px;height:22px;border-radius:50%;border:2px solid var(--rule);display:grid;place-items:center;font-size:12px}
+.psteps li.on{color:var(--ink)} .psteps li.on .dot{border-color:var(--ink);border-top-color:transparent;animation:spin 1s linear infinite}
+.psteps li.done{color:var(--ink2)} .psteps li.done .dot{border-color:var(--r-found);background:var(--r-found);color:var(--sheet)}
+.psteps li small{display:block;font-size:12px;color:var(--mute);white-space:pre-line}
+.psteps time{font-size:12px;color:var(--mute);font-variant-numeric:tabular-nums}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.psteps li.on .dot{animation:none;border-top-color:var(--ink)}}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+.actions button{font:inherit;font-size:13px;border:1px solid var(--ink);background:var(--sheet);color:var(--ink);border-radius:6px;padding:5px 14px;cursor:pointer}
+.case-sum.big{font-size:17px;line-height:1.75}
+td.n a{font-variant-numeric:tabular-nums;text-decoration:none;color:var(--t-wiki)}
+footer{margin-top:40px;font-size:12px;color:var(--mute)}
+
+.jump{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 0}
+.jump a{font-size:14px;border:1px solid var(--rule);border-radius:99px;padding:3px 12px;color:var(--ink);text-decoration:none;background:var(--sheet)}
+.jump a:hover{border-color:var(--ink)}
+.how{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-top:20px;font-size:14px;color:var(--ink2)}
+.how b{display:block;color:var(--ink);font-weight:500;margin-bottom:2px}
+.case{scroll-margin-top:16px}
+.casewrap{margin-top:34px}
+.casewrap h2{font:700 15px/1.4 var(--sans);color:var(--mute);margin:0}
+.map pre.mermaid{background:transparent;margin:0;white-space:pre}
+.map{overflow-x:auto}
+@media (max-width:640px){.how{grid-template-columns:1fr 1fr}}
+</style>
+<div class="wrap">
+<header>
+<h1>元宝考据侦探：三份真实查证报告</h1>
+<p>把一句流传的说法交给它，它用元宝搜索找原文，只拿原文说话。下面是 2026 年 10 月 24 日在本机跑出的三次真实查询，结论、引用和来源都未经人工修改，每个来源都可以点开核对。</p>
+<div class="how">
+<div><b>拆解</b>分清人物/作品和真正要核实的细节</div>
+<div><b>元宝搜索</b>全网搜索词，加上维基文库、汉典、萌娘百科等站内搜索</div>
+<div><b>找原句</b>只留下真正谈到这个细节的句子</div>
+<div><b>判断与核对</b>模型只能引用原句；程序把每句引用拿回原文逐字比对</div>
+</div>
+<nav class="jump" aria-label="跳到报告"><a href="#lunyu">孔子主张以德报怨</a><a href="#lanting">《兰亭序》真迹陪葬在唐太宗的昭陵里</a><a href="#traceon">Trace on 是投影魔术的正规魔术师咒文</a></nav>
+</header>
+<div class="casewrap" id="lunyu"><h2>名言·文史</h2><article class="case"><div class="case-head"><div>
+      <div class="case-kind">名言·文史，说法，论语</div>
+      <div class="case-claim">孔子主张以德报怨</div>
+      <p class="case-sum big">孔子并不主张以德报怨。《论语·宪问》原文是别人问“以德报怨，何如”，孔子反问“何以报德”，并主张“以直报怨，以德报德”<sup><a href="https://zdic.net/hans/%E4%BB%A5%E5%BE%B7%E5%A0%B1%E6%80%A8" target="_blank" rel="noopener" title="zdic.net">[2]</a></sup><sup><a href="https://zh.wikisource.org/zh-hans/%E8%AB%96%E8%AA%9E/%E6%86%B2%E5%95%8F%E7%AC%AC%E5%8D%81%E5%9B%9B" target="_blank" rel="noopener" title="zh.wikisource.org">[3]</a></sup><sup><a href="https://m.ccdi.gov.cn/content/45/bc/3189.html" target="_blank" rel="noopener" title="中央纪委国家监委网站">[11]</a></sup>。把提问当成孔子主张，属误传。</p>
+      <p class="case-sum" style="margin-top:10px;font-size:14px;color:var(--ink2)">“以德报怨”是否源于《老子》仅有百科提及[6]，未据原典核实。</p>
+    </div>
+    <div class="stamp v-twist" role="img" aria-label="评级：说法有偷换"><b>说法有偷换</b><span>原文说的是别的</span>
+      <div class="scale"><i class="on"></i><i class="on"></i><i class=""></i><i class=""></i><i class=""></i></div></div>
+  </div><section class="sec"><h3>拆开来看</h3><p class="hint">每一条后面的编号都能点开，直接跳到原网页。</p>
+    <div class="tfu"><div class="c-true"><h4>原文能证实的</h4><ul><li>《论语·宪问》原文为“或曰：以德报怨，何如？子曰：何以报德？以直报怨，以德报德” <sup><a href="https://zdic.net/hans/%E4%BB%A5%E5%BE%B7%E5%A0%B1%E6%80%A8" target="_blank" rel="noopener" title="zdic.net">[2]</a><a href="https://zh.wikisource.org/zh-hans/%E8%AB%96%E8%AA%9E/%E6%86%B2%E5%95%8F%E7%AC%AC%E5%8D%81%E5%9B%9B" target="_blank" rel="noopener" title="zh.wikisource.org">[3]</a><a href="https://m.ccdi.gov.cn/content/45/bc/3189.html" target="_blank" rel="noopener" title="中央纪委国家监委网站">[11]</a></sup></li><li>孔子不认同以德报怨，主张以直报怨、以德报德 <sup><a href="https://m.ccdi.gov.cn/content/45/bc/3189.html" target="_blank" rel="noopener" title="中央纪委国家监委网站">[11]</a><a href="https://sdjj.gov.cn/szzx/201505/t20150515_11226177.htm" target="_blank" rel="noopener" title="山东省纪委监委网站">[13]</a></sup></li></ul></div>
+    <div class="c-false"><h4>原文不支持的</h4><ul><li>“以德报怨”在原文中是“或曰”提出的设问，并非孔子的主张 <sup><a href="https://zdic.net/hans/%E4%BB%A5%E5%BE%B7%E5%A0%B1%E6%80%A8" target="_blank" rel="noopener" title="zdic.net">[2]</a><a href="https://zh.wikisource.org/zh-hans/%E8%AB%96%E8%AA%9E/%E6%86%B2%E5%95%8F%E7%AC%AC%E5%8D%81%E5%9B%9B" target="_blank" rel="noopener" title="zh.wikisource.org">[3]</a><a href="https://czj.guiyang.gov.cn/new_site/xwdt/zhdt_5908367/202205/t20220531_74506472.html" target="_blank" rel="noopener" title="贵阳市财政局">[12]</a></sup></li></ul></div>
+    <div class="c-unk"><h4>没查到的</h4><ul><li>“以德报怨”是否最早出自《老子》，摘录中仅有百科一说[6]，原典未直接比对</li></ul></div></div></section><section class="sec"><h3>证据怎么推出结论</h3><p class="hint">从上往下读：哪个网站 → 说了哪句原话 → 支持还是反驳 → 得出结论。绿色是支持，橙色是反驳，虚线是相关但不直接。</p>
+    <div class="map"><pre class="mermaid">flowchart TB
+C["说法：孔子主张以德报怨"]
+V{{"结论：说法有偷换"}}
+S2(["[2] zdic.net&lt;br/&gt;原典/权威"])
+class S2 src
+E0["「或曰:“以德报怨,何如?”子&lt;br/&gt;曰:“何以报德?以直报怨,以&lt;br/&gt;德报德。」"]
+S2 --&gt; E0
+E0 --&gt;|反驳| C
+class E0 reb
+S3(["[3] zh.wikisource.&lt;br/&gt;原典/权威"])
+class S3 src
+E1["「或曰:“以德报怨,何如?”子&lt;br/&gt;曰:“何以报德?以德一作“直&lt;br/&gt;”报怨,以德报德。」"]
+S3 --&gt; E1
+E1 --&gt;|反驳| C
+class E1 reb
+S11(["[11] 中央纪委国家监委网站&lt;br/&gt;其他"])
+class S11 src
+E2["「可见,孔子不主张“以德报怨”&lt;br/&gt;,而是主张“以直报怨”、“以&lt;br/&gt;德报德”。」"]
+S11 --&gt; E2
+E2 --&gt;|反驳| C
+class E2 reb
+S12(["[12] 贵阳市财政局&lt;br/&gt;其他"])
+class S12 src
+E3["「“以德报怨”只是一句设问,并&lt;br/&gt;不是结论,孔老先生是极力反对」"]
+S12 --&gt; E3
+E3 --&gt;|反驳| C
+class E3 reb
+C --&gt;|"依据：原典与多家权威来源均显示“&lt;br/&gt;以德报怨”是他人设问，孔子明确主&lt;br/&gt;张“以直报怨，以德报德"| V
+class V twist
+classDef sup stroke:#1f7a4d,stroke-width:2px
+classDef reb stroke:#c2410c,stroke-width:2px
+classDef rel stroke:#8a94a6,stroke-dasharray:4 3
+classDef src fill:#ffffff,stroke:#8a94a6
+classDef found stroke:#1f7a4d,stroke-width:3px
+classDef part stroke:#b7791f,stroke-width:3px
+classDef twist stroke:#c2410c,stroke-width:3px
+classDef split stroke:#6d28d9,stroke-width:3px
+classDef none stroke:#6b7280,stroke-width:3px</pre></div></section><section class="sec"><h3>证据清单</h3><p class="hint">模型引用的每一句都拿回原网页逐字比对过，对不上的标红，不算进结论。方括号编号和上文 [1][2]、文末来源列表是同一套。</p><table>
+    <tbody><tr><th>来源</th><th>原句</th><th>立场</th><th>网站</th><th>核对</th></tr><tr><td class="n"><a href="https://zdic.net/hans/%E4%BB%A5%E5%BE%B7%E5%A0%B1%E6%80%A8" target="_blank" rel="noopener">[2]</a></td><td class="q">「或曰:“以德报怨,何如?”子曰:“何以报德?以直报怨,以德报德。」</td>
+      <td><span class="tag st-反驳">反驳</span></td>
+      <td><a href="https://zdic.net/hans/%E4%BB%A5%E5%BE%B7%E5%A0%B1%E6%80%A8" target="_blank" rel="noopener">zdic.net</a><br><span class="tag t-官方">原典/权威</span></td>
+      <td><span class="ok">原文一致</span></td></tr><tr><td class="n"><a href="https://zh.wikisource.org/zh-hans/%E8%AB%96%E8%AA%9E/%E6%86%B2%E5%95%8F%E7%AC%AC%E5%8D%81%E5%9B%9B" target="_blank" rel="noopener">[3]</a></td><td class="q">「或曰:“以德报怨,何如?”子曰:“何以报德?以德一作“直”报怨,以德报德。」</td>
+      <td><span class="tag st-反驳">反驳</span></td>
+      <td><a href="https://zh.wikisource.org/zh-hans/%E8%AB%96%E8%AA%9E/%E6%86%B2%E5%95%8F%E7%AC%AC%E5%8D%81%E5%9B%9B" target="_blank" rel="noopener">zh.wikisource.org</a><br><span class="tag t-官方">原典/权威</span></td>
+      <td><span class="ok">原文一致</span></td></tr><tr><td class="n"><a href="https://m.ccdi.gov.cn/content/45/bc/3189.html" target="_blank" rel="noopener">[11]</a></td><td class="q">「可见,孔子不主张“以德报怨”,而是主张“以直报怨”、“以德报德”。」</td>
+      <td><span class="tag st-反驳">反驳</span></td>
+      <td><a href="https://m.ccdi.gov.cn/content/45/bc/3189.html" target="_blank" rel="noopener">中央纪委国家监委网站</a><br><span class="tag t-其他">其他</span></td>
+      <td><span class="ok">原文一致</span></td></tr><tr><td class="n"><a href="https://czj.guiyang.gov.cn/new_site/xwdt/zhdt_5908367/202205/t20220531_74506472.html" target="_blank" rel="noopener">[12]</a></td><td class="q">「“以德报怨”只是一句设问,并不是结论,孔老先生是极力反对」</td>
+      <td><span class="tag st-反驳">反驳</span></td>
+      <td><a href="https://czj.guiyang.gov.cn/new_site/xwdt/zhdt_5908367/202205/t20220531_74506472.html" target="_blank" rel="noopener">贵阳市财政局</a><br><span class="tag t-其他">其他</span></td>
+      <td><span class="ok">原文一致</span></td></tr></tbody></table></section><section class="sec"><h3>来源构成</h3><p class="hint">提到这个具体点的 14 个网页里，各类来源的占比。官方和百科越多越可靠，问答农场多半是机器生成的。</p>
+    <div class="mix"><i style="width:35.714285714285715%;background:var(--t-off)" title="官方 5"></i><i style="width:21.428571428571427%;background:var(--t-wiki)" title="百科 3"></i><i style="width:21.428571428571427%;background:var(--t-media)" title="媒体 3"></i><i style="width:21.428571428571427%;background:var(--mute)" title="其他 3"></i></div>
+    <div class="legend"><span><b style="background:var(--t-off)"></b>原典/权威 5</span><span><b style="background:var(--t-wiki)"></b>百科 3</span><span><b style="background:var(--t-media)"></b>媒体 3</span><span><b style="background:var(--mute)"></b>其他 3</span></div></section><section class="sec"><details><summary>调查过程（10 次元宝搜索，85 个网页）</summary><ol class="timeline" style="margin-top:12px">
+      <li>领域：名言·文史；识别为说法，要核实：核实“孔子主张以德报怨”是否为误传：孔子在《论语·宪问》中实际主张“以直报怨，以德报德”，“以德报怨”是他人（或曰）提出的说法。</li>
+      <li>定位用的细节词：以德报怨、以直报怨、以德报德、何以报德、宪问、或曰、子曰、报怨</li>
+      <li>元宝搜索「孔子 以德报怨 原文 出处 论语 宪问」：20 条</li><li>元宝搜索「以德报怨 以直报怨 以德报德 何以报德 原文」：20 条</li><li>元宝搜索「以德报怨 误传 不是孔子 老子 出处」：20 条</li><li>元宝搜索「论语 宪问 或曰 以德报怨 子曰 何以报德」：20 条</li><li>元宝搜索「论语 孔子主张以德报怨」：20 条</li><li>元宝搜索「论语 以德报怨 宪问」，限定在 zh.wikisource.org：10 条</li><li>元宝搜索「论语 以德报怨 宪问」，限定在 ctext.org：10 条</li><li>元宝搜索「论语 以德报怨 宪问」，限定在 zdic.net：5 条</li><li>元宝搜索「论语 以德报怨 宪问」，限定在 piyao.org.cn：0 条</li>
+      <li>85 个网页中，69 个提到了这个具体点，取前 14 个交给模型</li>
+      <li>模型引用 4 句，原文核对通过 4 句</li></ol></details></section><section class="sec"><details><summary>提到这个具体点的全部来源（14）</summary><div class="src "><a href="http://sspress.cssn.cn/2009n/12y/3_28354/d20b_28374/201508/t20150826_2652957.shtml" target="_blank" rel="noopener">[1] 老子劝人立德</a>
+      <span class="tag t-官方">原典/权威</span> <span class="meta" style="display:inline">中国社会科学网 2009/12/10</span>
+      <p>孔子曰:“道之以政,齐之以刑,民免而无耻;道之以德,齐之以礼,有耻且格。 …… ”(《论语·为政篇》)荀子曰:“积善成德,而神明自得。 …… 老子曰:“修之于身,其德乃真;修之于家,其德乃余;修之于乡,其德乃长;修之于邦,其德乃丰;修之于天下,其德乃普。</p></div><div class="src "><a href="https://zdic.net/hans/%E4%BB%A5%E5%BE%B7%E5%A0%B1%E6%80%A8" target="_blank" rel="noopener">[2] 以德報怨的解释汉典</a>
+      <span class="tag t-官方">原典/权威</span> <span class="meta" style="display:inline">zdic.net </span>
+      <p>yuàn 注音ㄧˇ ㄉㄜˊ ㄅㄠˋ ㄩㄢˋ 以德報怨 词语解释 以德報怨yǐ dé bào yuànㄧˇ ㄉㄜˊ ㄅㄠˋ ㄩㄢˋ 不记别人的仇,反而用恩惠去报答怨恨 书证 或曰:“以德报怨,何如?”子曰:“何以报德?以直报怨,以德报德。 …… 出处 《论语·宪问》:“或曰:‘以德报怨何如?’子曰:‘何以报德?以直报怨,以德报德。 …… 书证 或曰:『以德报怨,何如?』子曰:『何以报德?以直报怨,以德报德。</p></div><div class="src "><a href="https://zh.wikisource.org/zh-hans/%E8%AB%96%E8%AA%9E/%E6%86%B2%E5%95%8F%E7%AC%AC%E5%8D%81%E5%9B%9B" target="_blank" rel="noopener">[3] 论语/宪问第十四</a>
+      <span class="tag t-官方">原典/权威</span> <span class="meta" style="display:inline">zh.wikisource.org 2008/06/10</span>
+      <p>论语/宪问第十四。论语/宪问第十四 姊妹计划: 数据项 注疏 十四之一 宪问“耻”。子曰:“邦有道,谷;邦无道,谷,耻也。” 十四之二 “克、伐、怨、欲,不行焉,可以为仁矣?”子曰:“可以为难矣,仁则吾不知也。” 十四之三 子曰:“士而怀居,不足以为士矣!” 十四之四 子曰:“邦有道,危言危行;邦无道,危行言孙。” 十四之五 子曰:“有德者必有言,有言者不必有德。 …… ” 十四之三六 或曰:“以德报怨,何如?”子曰:“何以报德?以德一作“直”报怨,以德报德。</p></div><div class="src "><a href="https://zh.wikisource.org/zh-hans/Page:%E8%AB%96%E8%AA%9E%E9%81%B8%E8%AD%AF_Lunjy_syanji.pdf/29" target="_blank" rel="noopener">[4] 论语选译 Lunjy syanji.pdf/29</a>
+      <span class="tag t-官方">原典/权威</span> <span class="meta" style="display:inline">zh.wikisource.org </span>
+      <p>nd xiangshou funglu; guogia gaode bu xao, zoguand ie xiangshou funglu. Zhe ziu sh koch!” 原宪问孔子:“怎样叫可耻?”孔子 说:“国家搞得好,做官的享受俸禄;国家 搞得不好,做官的也享受俸禄。这就是可 耻!” 子曰.不患 人之不己知. 患其不能也. Kungz shuo: “Bu iao iuchou rhen- gia bu zhdao zgi; inggai iuchou zgi nengli bu gou.” 孔子说:“不要忧愁人家不知道自 己;应该忧愁自己能 …… ” 或曰.以德 报怨.何如.子 曰.何以报德. 以直报怨.以 德报德. Iou rhen wen: “Yng enxui lai baoda chouxen, zenjang?” Kungz shuo: “Name yng shemo lai baoda enxui ne? Inggai yng gungzhe</p></div><div class="src "><a href="https://zdic.net/hans/%E4%BD%95%E4%BB%A5" target="_blank" rel="noopener">[5] 何以 词语解释</a>
+      <span class="tag t-官方">原典/权威</span> <span class="meta" style="display:inline">zdic.net </span>
+      <p>书证 或曰:『以德报怨,何如?』子曰:『何以报德?』 —— 《论语.宪问》 何以解忧?唯有杜康。</p></div><div class="src "><a href="https://baike.baidu.com/tashuo/browse/content?id=9b9d9c1a668d5835d8269e87" target="_blank" rel="noopener">[6] 常言道:以德报怨,但孔子却并不认同这句话</a>
+      <span class="tag t-百科">百科</span> <span class="meta" style="display:inline">百度百科 2021/06/01</span>
+      <p>常言道:以德报怨,但孔子却并不认同这句话。 …… 例如我们经常说的以德报怨,实际上这并不是孔子的思想。《论语·宪问》里讲到:或曰:以德报怨,何如?子曰:何以报德?以直报怨,以德报德。从《论语》原文可以看出,孔子认为以德报怨是不对的,应该以直报怨,以德报德。实际上“以德报怨”是道家思想,最早是出自于《老子》。 …… 这些典故与“以德报怨”有异曲同工之处。</p></div><div class="src "><a href="https://baike.so.com/doc/10040027-32363474.html" target="_blank" rel="noopener">[7] 以德报怨 - 汉语成语</a>
+      <span class="tag t-百科">百科</span> <span class="meta" style="display:inline">360百科 2024/01/10</span>
+      <p>以德报怨 - 汉语成语。以德报怨 - 汉语成语 免费编辑 修改义项名 以德报怨是一个成语,意思是不记别人的仇,反而用恩惠去报答怨恨。 基本个始宜损面容宪信息 中文名 以德报怨 拼音 yǐ dé bào yuàn 注音 ㄧˇ ㄉㄜˊ ㄅㄠˋ ㄩㄢˋ 出自 《论语·宪问》 折叠 编辑本段 成语解360百科释 【解释】德:恩惠。 …… 折叠 编辑本段 出处 【出处】《论语·宪问》陈住:“或曰:‘以德报怨何如?’子曰:‘何以报德?以讲研换位直报怨,以德报德。’” 折叠 编辑本段 价值 “以德报怨”是中国传统成许确沉奏之与都约用五伦理中一个古老的命题,它在中国汉唐时期影响并不很大,甚至很少有人提及。</p></div><div class="src "><a href="https://baike.so.com/doc/10040027.html" target="_blank" rel="noopener">[8] 以德报怨</a>
+      <span class="tag t-百科">百科</span> <span class="meta" style="display:inline">360百科 2024/01/10</span>
+      <p>以德报怨。 …… 查看详细规范&gt;&gt;所 360百科 属类别 : 其他文学作品 相关 | 成语 其他文学作品相关 | 成语 以德报怨是一个成语,意思是不记别人的仇,反而用恩惠去报答怨恨。 基本信息 中文名 以德报怨 拼音 yǐ dé bào yuàn 注音 出自 《论语·宪问》 目录 1 成语解释 2 出处 3 价值 4 近义词 【解释】德:恩惠。 …… 【出处】《论语·宪问》:“或曰:‘以德报怨何如?’子曰:‘何以报德?以 直报怨,以德报德。’” “以德报怨”是中国传统 伦理中一个古老的命题,它在 中国汉唐时期影响并不很大,甚至很少有人提及。</p></div><div class="src "><a href="https://m.news.cctv.com/2018/09/28/ARTIo47hUK2tZNNzP9lIUW5E180928.shtml" target="_blank" rel="noopener">[9] 君子之交,淡而不腻,始得长久</a>
+      <span class="tag t-媒体">媒体</span> <span class="meta" style="display:inline">央视新闻 2018/09/28</span>
+      <p>以德报怨 ——出自《论语·宪问》 原文是:或曰“以德报怨,何如?”子曰:“何以报德?以直报怨,以德报德”。 孔子的一个弟子问他说:老师,别人打我了,我不打他,我反而要对他好,用我的道德和教养让他悔悟,好不好?” 孔子说,你以德报怨,那“何以报德”,别人以德来待你的时候,你才需要以德来回报别人;可是现在别人打了你,你就应该“以直报怨”,以正直的态度去对待人,不卑不亢,以一个正确客观的态度去解决。 …… 愚不可及 ——出自《论语·公冶长》 原文是:子曰:“宁武子邦有道则知,邦无道则愚;其知可及也,其愚不可及也。</p></div><div class="src "><a href="https://www.chinanews.com.cn/hb/news/2009/09-27/1889477.shtml" target="_blank" rel="noopener">[10] 中国古人何以报怨?盘点古籍概括的3大方式</a>
+      <span class="tag t-媒体">媒体</span> <span class="meta" style="display:inline">中国新闻网 2009/09/27</span>
+      <p>何以报怨?古籍所载主要三种:即以怨报怨、以德报怨和以直报怨。“以怨报怨”不可取,而对“以德报怨”和“以直报怨”的理解、解释、取舍,有同有异。 …… 恩怨情仇是人生中难以逃脱的纠葛,若人人相爱,则天下其乐融融,但结仇结怨的情形却并非少见,如何处理已发生的“怨”呢?从我国古代典籍中概括,主要有三种:“以怨报怨”、“以德报怨”和“以直报怨”。 …… 以德报怨 “为无为,事无事,味无味。</p></div><div class="src "><a href="https://m.ccdi.gov.cn/content/45/bc/3189.html" target="_blank" rel="noopener">[11] 孔子对“以德报怨”怎么看?</a>
+      <span class="tag t-其他">其他</span> <span class="meta" style="display:inline">中央纪委国家监委网站 </span>
+      <p>孔子对“以德报怨”怎么看?。《论语•宪问》载:“或曰:‘以德报怨,何如?’子曰:‘何以报德?以直报怨,以德报德。’”意思是,有人向孔子请教,以恩德去回报仇怨,怎么样?孔子反问如果报答仇怨要用恩德,那么,受人恩惠之德又将何以报之?可见,孔子不主张“以德报怨”,而是主张“以直报怨”、“以德报德”。 …… 因此,孔子对“以德报怨”并不认同。</p></div><div class="src "><a href="https://czj.guiyang.gov.cn/new_site/xwdt/zhdt_5908367/202205/t20220531_74506472.html" target="_blank" rel="noopener">[12] 这些耳熟能详的《论语》名言,原来另有其意</a>
+      <span class="tag t-其他">其他</span> <span class="meta" style="display:inline">贵阳市财政局 2019/09/09</span>
+      <p>2以德报怨 这四个字出自 《论语·宪问》,大家常常用这句话去劝人放下,殊不知“以德报怨”只是一句设问,并不是结论,孔老先生是极力反对打完左脸把右脸也伸过去的感化做法的。 原文是这样的:“或曰:‘以德报怨,何如?’子曰:‘何以报德?以直报怨,以德报德。’” 翻译成白话文,就是孔子的一个弟子问他说:“老师,别人打我了,我不打他,我反而要对他好,用我的道德和教养羞死他,让他悔悟,好不好?” 孔子就说:“你以德报怨,那‘何以报德’,别人以德来待你的时候,你才需要以德来回报别人;可是现在别人打了你,你就应该‘以直报怨’,以正直的态度去对待人,不卑不亢,事情该咋办咋办,以一个正确客观的态度去解决。” 所以,“以德报怨”并不是孔子在提倡别人来欺负你,你反而应该对他更好。孔子真正的价值观是:“以直报怨,以德报德”。</p></div><div class="src "><a href="https://sdjj.gov.cn/szzx/201505/t20150515_11226177.htm" target="_blank" rel="noopener">[13] 【微也足道】孔子对“以德报怨”怎么看?</a>
+      <span class="tag t-其他">其他</span> <span class="meta" style="display:inline">山东省纪委监委网站 2015/05/15</span>
+      <p>【微也足道】孔子对“以德报怨”怎么看?。《论语·宪问》载:“或曰:‘以德报怨,何如?’子曰:‘何以报德?以直报怨,以德报德。’”意思是,有人向孔子请教,以恩德去回报仇怨,怎么样?孔子反问如果报答仇怨要用恩德,那么,受人恩惠之德又将何以报之?可见,孔子不主张“以德报怨”,而是主张“以直报怨”、“以德报德”。 …… 因此,孔子对“以德报怨”并不认同。</p></div><div class="src "><a href="https://www.chinanews.com.cn/hb/2011/07-13/3180327.shtml" target="_blank" rel="noopener">[14] 以德报怨</a>
+      <span class="tag t-媒体">媒体</span> <span class="meta" style="display:inline">中国新闻网 2011/07/13</span>
+      <p>以德报怨。“以德报怨”是我们常听到的一句成语,人们通常理解的“以德报怨”是指用恩惠回报与别人的仇恨,用你的爱心去感化他,用你的胸怀去感动他。 …… 一般来说,中国传统的道德观念中,以德报怨是一条主线,不论儒、道、佛都经常有所强调。 …… 也许有人会说孔子并不坚持以德报怨,且看《论语•宪问》:“或曰:‘以德报怨何如?’子曰:‘何以报德?以直报怨,以德报德。’”孔子说,你以德报怨,那“何以报德?”别人以德来待你的时候,你才需要以德来回报别人。你应该公正合理地“以直报怨”。</p></div></details>
+    <details style="margin-top:10px"><summary>只提到角色或作品、没谈到这个点的网页（13）</summary><div class="src"><a href="https://m.people.cn/n4/2017/1124/c679-10167318.html" target="_blank" rel="noopener">中华传统中的感恩文化</a> <span class="meta" style="display:inline">人民网</span></div><div class="src"><a href="https://humanrights.cn/2024/06/26/4642e59ce28841d49fb0432278b582ba.html" target="_blank" rel="noopener">联合国议事的儒学发声与文化相容人权观</a> <span class="meta" style="display:inline">中国人权网</span></div><div class="src"><a href="https://m.ccdi.gov.cn/content/db/e6/11645.html" target="_blank" rel="noopener">十句话读懂孔子的"德"</a> <span class="meta" style="display:inline">中央纪委国家监委网站</span></div><div class="src"><a href="https://www.nopss.gov.cn/BIG5/n1/2019/0218/c219468-30759614.html" target="_blank" rel="noopener">發掘儒學道德規范的當代價值</a> <span class="meta" style="display:inline">全国哲学社会科学工作办公室</span></div><div class="src"><a href="https://www.ccdi.gov.cn/specialn/lswhyl/202311/t20231117_308120.html" target="_blank" rel="noopener">道之以德 齐之以礼 有耻且格</a> <span class="meta" style="display:inline">中央纪委国家监委网站</span></div><div class="src"><a href="http://www.hananle.jcy.gov.cn/index.php?c=news&amp;a=view&amp;id=9426" target="_blank" rel="noopener">孔子:为政以德</a> <span class="meta" style="display:inline">12309检察服务中心</span></div><div class="src"><a href="https://cpc.people.com.cn/pinglun/n1/2016/1220/c78779-28962535.html" target="_blank" rel="noopener">光明日报:恃德者昌,恃力者亡</a> <span class="meta" style="display:inline">人民网</span></div><div class="src"><a href="https://www.nopss.gov.cn/n1/2019/0218/c219468-30759614.html" target="_blank" rel="noopener">发掘儒学道德规范的当代价值</a> <span class="meta" style="display:inline">全国哲学社会科学工作办公室</span></div><div class="src"><a href="https://cpc.people.com.cn/pinglun/BIG5/n1/2016/1220/c78779-28962535.html" target="_blank" rel="noopener">光明日報:恃德者昌,恃力者亡</a> <span class="meta" style="display:inline">人民网</span></div><div class="src"><a href="https://theory.people.com.cn/BIG5/n1/2019/0218/c40531-30759381.html" target="_blank" rel="noopener">學苑論衡:發掘儒學道德規范的當代價值</a> <span class="meta" style="display:inline">人民网</span></div><div class="src"><a href="https://www.ccdijl.gov.cn/ztjc/ljwh/202312/t20231215_8852143.html" target="_blank" rel="noopener">道之以德 齐之以礼 有耻且格</a> <span class="meta" style="display:inline">吉林省纪委监委网站</span></div><div class="src"><a href="https://zh.wikisource.org/zh/%E5%AD%94%E5%AD%90%E6%94%B9%E5%88%B6%E8%80%83/%E5%8D%B702" target="_blank" rel="noopener">孔子改制考/卷02</a> <span class="meta" style="display:inline">zh.wikisource.org</span></div><div class="src"><a href="https://zdic.net/hant/%E4%BB%A5" target="_blank" rel="noopener">以 yǐ､sì - 漢典</a> <span class="meta" style="display:inline">zdic.net</span></div></details>
+    <details style="margin-top:10px"><summary>完整报告（Markdown，含 ClaimReview 标准格式）</summary><pre># 查证报告：孔子主张以德报怨
+
+- 时间：2026/10/24 18:03:33
+- 领域：名言·文史
+- 相关：论语
+- 要核实：核实“孔子主张以德报怨”是否为误传：孔子在《论语·宪问》中实际主张“以直报怨，以德报德”，“以德报怨”是他人（或曰）提出的说法。
+
+## 结论：说法有偷换
+孔子并不主张以德报怨。《论语·宪问》原文是别人问“以德报怨，何如”，孔子反问“何以报德”，并主张“以直报怨，以德报德”[2][3][11]。把提问当成孔子主张，属误传。
+
+&gt; “以德报怨”是否源于《老子》仅有百科提及[6]，未据原典核实。
+
+## 证据（模型引用的原句，已逐字核对；编号对应文末来源列表）
+- [2]【反驳】「或曰:“以德报怨,何如?”子曰:“何以报德?以直报怨,以德报德。」 —— [zdic.net](https://zdic.net/hans/%E4%BB%A5%E5%BE%B7%E5%A0%B1%E6%80%A8)
+- [3]【反驳】「或曰:“以德报怨,何如?”子曰:“何以报德?以德一作“直”报怨,以德报德。」 —— [zh.wikisource.org](https://zh.wikisource.org/zh-hans/%E8%AB%96%E8%AA%9E/%E6%86%B2%E5%95%8F%E7%AC%AC%E5%8D%81%E5%9B%9B)
+- [11]【反驳】「可见,孔子不主张“以德报怨”,而是主张“以直报怨”、“以德报德”。」 —— [中央纪委国家监委网站](https://m.ccdi.gov.cn/content/45/bc/3189.html)
+- [12]【反驳】「“以德报怨”只是一句设问,并不是结论,孔老先生是极力反对」 —— [贵阳市财政局](https://czj.guiyang.gov.cn/new_site/xwdt/zhdt_5908367/202205/t20220531_74506472.html)
+
+## 论证图
+```mermaid
+flowchart TB
+C["说法：孔子主张以德报怨"]
+V{{"结论：说法有偷换"}}
+S2(["[2] zdic.net&lt;br/&gt;原典/权威"])
+class S2 src
+E0["「或曰:“以德报怨,何如?”子&lt;br/&gt;曰:“何以报德?以直报怨,以&lt;br/&gt;德报德。」"]
+S2 --&gt; E0
+E0 --&gt;|反驳| C
+class E0 reb
+S3(["[3] zh.wikisource.&lt;br/&gt;原典/权威"])
+class S3 src
+E1["「或曰:“以德报怨,何如?”子&lt;br/&gt;曰:“何以报德?以德一作“直&lt;br/&gt;”报怨,以德报德。」"]
+S3 --&gt; E1
+E1 --&gt;|反驳| C
+class E1 reb
+S11(["[11] 中央纪委国家监委网站&lt;br/&gt;其他"])
+class S11 src
+E2["「可见,孔子不主张“以德报怨”&lt;br/&gt;,而是主张“以直报怨”、“以&lt;br/&gt;德报德”。」"]
+S11 --&gt; E2
+E2 --&gt;|反驳| C
+class E2 reb
+S12(["[12] 贵阳市财政局&lt;br/&gt;其他"])
+class S12 src
+E3["「“以德报怨”只是一句设问,并&lt;br/&gt;不是结论,孔老先生是极力反对」"]
+S12 --&gt; E3
+E3 --&gt;|反驳| C
+class E3 reb
+C --&gt;|"依据：原典与多家权威来源均显示“&lt;br/&gt;以德报怨”是他人设问，孔子明确主&lt;br/&gt;张“以直报怨，以德报德"| V
+class V twist
+classDef sup stroke:#1f7a4d,stroke-width:2px
+classDef reb stroke:#c2410c,stroke-width:2px
+classDef rel stroke:#8a94a6,stroke-dasharray:4 3
+classDef src fill:#ffffff,stroke:#8a94a6
+classDef found stroke:#1f7a4d,stroke-width:3px
+classDef part stroke:#b7791f,stroke-width:3px
+classDef twist stroke:#c2410c,stroke-width:3px
+classDef split stroke:#6d28d9,stroke-width:3px
+classDef none stroke:#6b7280,stroke-width:3px
+```
+
+## 调查步骤
+- 细节词：以德报怨、以直报怨、以德报德、何以报德、宪问、或曰、子曰、报怨
+- 元宝搜索「孔子 以德报怨 原文 出处 论语 宪问」：20 条
+- 元宝搜索「以德报怨 以直报怨 以德报德 何以报德 原文」：20 条
+- 元宝搜索「以德报怨 误传 不是孔子 老子 出处」：20 条
+- 元宝搜索「论语 宪问 或曰 以德报怨 子曰 何以报德」：20 条
+- 元宝搜索「论语 孔子主张以德报怨」：20 条
+- 元宝搜索「论语 以德报怨 宪问」（站内：zh.wikisource.org）：10 条
+- 元宝搜索「论语 以德报怨 宪问」（站内：ctext.org）：10 条
+- 元宝搜索「论语 以德报怨 宪问」（站内：zdic.net）：5 条
+- 元宝搜索「论语 以德报怨 宪问」（站内：piyao.org.cn）：0 条
+- 共 85 个网页，69 个提到细节
+
+## 提到细节的全部来源
+1. [老子劝人立德](http://sspress.cssn.cn/2009n/12y/3_28354/d20b_28374/201508/t20150826_2652957.shtml) · 官方 · 中国社会科学网
+2. [以德報怨的解释汉典](https://zdic.net/hans/%E4%BB%A5%E5%BE%B7%E5%A0%B1%E6%80%A8) · 官方 · zdic.net
+3. [论语/宪问第十四](https://zh.wikisource.org/zh-hans/%E8%AB%96%E8%AA%9E/%E6%86%B2%E5%95%8F%E7%AC%AC%E5%8D%81%E5%9B%9B) · 官方 · zh.wikisource.org
+4. [论语选译 Lunjy syanji.pdf/29](https://zh.wikisource.org/zh-hans/Page:%E8%AB%96%E8%AA%9E%E9%81%B8%E8%AD%AF_Lunjy_syanji.pdf/29) · 官方 · zh.wikisource.org
+5. [何以 词语解释](https://zdic.net/hans/%E4%BD%95%E4%BB%A5) · 官方 · zdic.net
+6. [常言道:以德报怨,但孔子却并不认同这句话](https://baike.baidu.com/tashuo/browse/content?id=9b9d9c1a668d5835d8269e87) · 百科 · 百度百科
+7. [以德报怨 - 汉语成语](https://baike.so.com/doc/10040027-32363474.html) · 百科 · 360百科
+8. [以德报怨](https://baike.so.com/doc/10040027.html) · 百科 · 360百科
+9. [君子之交,淡而不腻,始得长久](https://m.news.cctv.com/2018/09/28/ARTIo47hUK2tZNNzP9lIUW5E180928.shtml) · 媒体 · 央视新闻
+10. [中国古人何以报怨?盘点古籍概括的3大方式](https://www.chinanews.com.cn/hb/news/2009/09-27/1889477.shtml) · 媒体 · 中国新闻网
+11. [孔子对“以德报怨”怎么看?](https://m.ccdi.gov.cn/content/45/bc/3189.html) · 其他 · 中央纪委国家监委网站
+12. [这些耳熟能详的《论语》名言,原来另有其意](https://czj.guiyang.gov.cn/new_site/xwdt/zhdt_5908367/202205/t20220531_74506472.html) · 其他 · 贵阳市财政局
+13. [【微也足道】孔子对“以德报怨”怎么看?](https://sdjj.gov.cn/szzx/201505/t20150515_11226177.htm) · 其他 · 山东省纪委监委网站
+14. [以德报怨](https://www.chinanews.com.cn/hb/2011/07-13/3180327.shtml) · 媒体 · 中国新闻网
+
+## ClaimReview（schema.org 事实核查标准格式）
+```json
+{
+ "@context": "https://schema.org",
+ "@type": "ClaimReview",
+ "datePublished": "2026-10-24",
+ "claimReviewed": "孔子主张以德报怨",
+ "author": {
+  "@type": "Organization",
+  "name": "元宝考据侦探"
+ },
+ "reviewRating": {
+  "@type": "Rating",
+  "alternateName": "说法有偷换"
+ },
+ "itemReviewed": {
+  "@type": "Claim",
+  "appearance": [
+   {
+    "@type": "CreativeWork",
+    "url": "https://zdic.net/hans/%E4%BB%A5%E5%BE%B7%E5%A0%B1%E6%80%A8"
+   },
+   {
+    "@type": "CreativeWork",
+    "url": "https://zh.wikisource.org/zh-hans/%E8%AB%96%E8%AA%9E/%E6%86%B2%E5%95%8F%E7%AC%AC%E5%8D%81%E5%9B%9B"
+   },
+   {
+    "@type": "CreativeWork",
+    "url": "https://m.ccdi.gov.cn/content/45/bc/3189.html"
+   },
+   {
+    "@type": "CreativeWork",
+    "url": "https://czj.guiyang.gov.cn/new_site/xwdt/zhdt_5908367/202205/t20220531_74506472.html"
+   }
+  ]
+ }
+}
+```</pre></details>
+    
+    <div class="status">查证时间：2026/10/24 18:03:33</div></section></article></div><div class="casewrap" id="lanting"><h2>名言·文史</h2><article class="case"><div class="case-head"><div>
+      <div class="case-kind">名言·文史，说法，王羲之</div>
+      <div class="case-claim">《兰亭序》真迹陪葬在唐太宗的昭陵里</div>
+      <p class="case-sum big">《兰亭序》真迹随葬昭陵是唐宋以来流传最广的说法，唐代刘餗、周越等文献均有记载<sup><a href="https://zh.wikisource.org/zh-hans/%E5%85%AD%E8%97%9D%E4%B9%8B%E4%B8%80%E9%8C%B2_(%E5%9B%9B%E5%BA%AB%E5%85%A8%E6%9B%B8%E6%9C%AC)/%E5%8D%B7152" target="_blank" rel="noopener" title="zh.wikisource.org">[2]</a></sup><sup><a href="https://zh.wikisource.org/wiki/%E5%85%AD%E8%97%9D%E4%B9%8B%E4%B8%80%E9%8C%B2_(%E5%9B%9B%E5%BA%AB%E5%85%A8%E6%9B%B8%E6%9C%AC)/%E5%8D%B7152" target="_blank" rel="noopener" title="zh.wikisource.org">[13]</a></sup>；但宋代已有学者指出昭陵被盗后真迹复出人间<sup><a href="https://zh.wikisource.org/zh-hans/%E7%A9%80%E5%B1%B1%E7%AD%86%E9%BA%88/15" target="_blank" rel="noopener" title="zh.wikisource.org">[3]</a></sup>，故真迹是否仍在陵中并无定论。</p>
+      <p class="case-sum" style="margin-top:10px;font-size:14px;color:var(--ink2)">昭陵是否被盗、真迹是否复出，学界尚有争议，摘录不足以定论。</p>
+    </div>
+    <div class="stamp v-split" role="img" aria-label="评级：说法有分歧"><b>说法有分歧</b><span>来源互相矛盾</span>
+      <div class="scale"><i class="on"></i><i class="on"></i><i class="on"></i><i class=""></i><i class=""></i></div></div>
+  </div><section class="sec"><h3>拆开来看</h3><p class="hint">每一条后面的编号都能点开，直接跳到原网页。</p>
+    <div class="tfu"><div class="c-true"><h4>原文能证实的</h4><ul><li>唐代文献记载唐太宗遗命将《兰亭序》随葬昭陵，用玉匣盛贮 <sup><a href="https://zh.wikisource.org/zh-hans/%E5%85%AD%E8%97%9D%E4%B9%8B%E4%B8%80%E9%8C%B2_(%E5%9B%9B%E5%BA%AB%E5%85%A8%E6%9B%B8%E6%9C%AC)/%E5%8D%B7152" target="_blank" rel="noopener" title="zh.wikisource.org">[2]</a><a href="https://zh.wikisource.org/wiki/%E5%85%AD%E8%97%9D%E4%B9%8B%E4%B8%80%E9%8C%B2_(%E5%9B%9B%E5%BA%AB%E5%85%A8%E6%9B%B8%E6%9C%AC)/%E5%8D%B7152" target="_blank" rel="noopener" title="zh.wikisource.org">[13]</a></sup></li><li>《兰亭序》真迹确曾入唐太宗内府，太宗命人摹拓分赐近臣 <sup><a href="https://www.dpm.org.cn/collection/handwriting/228277.html" target="_blank" rel="noopener" title="故宫博物院">[1]</a><a href="https://zh.wikisource.org/zh-hans/%E5%85%AD%E8%97%9D%E4%B9%8B%E4%B8%80%E9%8C%B2_(%E5%9B%9B%E5%BA%AB%E5%85%A8%E6%9B%B8%E6%9C%AC)/%E5%8D%B7152" target="_blank" rel="noopener" title="zh.wikisource.org">[2]</a></sup></li></ul></div>
+    <div class="c-false"><h4>原文不支持的</h4><ul><li>宋代文献称昭陵被盗发后，钟王笔迹纸墨如新被取出，兰亭真帖复出人间，与'仍在昭陵'之说矛盾 <sup><a href="https://zh.wikisource.org/zh-hans/%E7%A9%80%E5%B1%B1%E7%AD%86%E9%BA%88/15" target="_blank" rel="noopener" title="zh.wikisource.org">[3]</a></sup></li></ul></div>
+    <div class="c-unk"><h4>没查到的</h4><ul><li>昭陵是否确曾被盗、真迹是否真的复出人间</li><li>《兰亭序》真迹今日究竟何在</li></ul></div></div></section><section class="sec"><h3>证据怎么推出结论</h3><p class="hint">从上往下读：哪个网站 → 说了哪句原话 → 支持还是反驳 → 得出结论。绿色是支持，橙色是反驳，虚线是相关但不直接。</p>
+    <div class="map"><pre class="mermaid">flowchart TB
+C["说法：《兰亭序》真迹陪葬在唐太宗的昭陵&lt;br/&gt;里"]
+V{{"结论：说法有分歧"}}
+S2(["[2] zh.wikisource.&lt;br/&gt;原典/权威"])
+class S2 src
+E0["「太宗崩中书令禇遂良奏兰亭乃先&lt;br/&gt;帝所重不可留遂殉葬昭陵」"]
+S2 --&gt; E0
+E0 --&gt;|支持| C
+class E0 sup
+S13(["[13] zh.wikisource.&lt;br/&gt;原典/权威"])
+class S13 src
+E1["「及奉諱之日用玉匣貯之藏於昭陵」"]
+S13 --&gt; E1
+E1 --&gt;|支持| C
+class E1 sup
+S3(["[3] zh.wikisource.&lt;br/&gt;原典/权威"])
+class S3 src
+E2["「世传《兰亭帖》殉葬昭陵是也,&lt;br/&gt;然以史考之,此本复出人间矣」"]
+S3 --&gt; E2
+E2 --&gt;|反驳| C
+class E2 reb
+E3["「锺、王笔迹纸墨如新,韬悉取之&lt;br/&gt;,遂传人间」"]
+S3 --&gt; E3
+E3 --&gt;|反驳| C
+class E3 reb
+S1(["[1] 故宫博物院&lt;br/&gt;原典/权威"])
+class S1 src
+E4["「唐太宗李世民酷爱羲之书法,在&lt;br/&gt;得到《兰亭序》真迹后,曾命当&lt;br/&gt;朝书法名家褚遂良、欧阳询」"]
+S1 --&gt; E4
+E4 --&gt;|相关| C
+class E4 rel
+C --&gt;|"依据：唐代多种文献记载随葬昭陵，&lt;br/&gt;但宋代文献又称昭陵被盗后真迹复出&lt;br/&gt;，两说互相矛盾，故属学"| V
+class V split
+classDef sup stroke:#1f7a4d,stroke-width:2px
+classDef reb stroke:#c2410c,stroke-width:2px
+classDef rel stroke:#8a94a6,stroke-dasharray:4 3
+classDef src fill:#ffffff,stroke:#8a94a6
+classDef found stroke:#1f7a4d,stroke-width:3px
+classDef part stroke:#b7791f,stroke-width:3px
+classDef twist stroke:#c2410c,stroke-width:3px
+classDef split stroke:#6d28d9,stroke-width:3px
+classDef none stroke:#6b7280,stroke-width:3px</pre></div></section><section class="sec"><h3>证据清单</h3><p class="hint">模型引用的每一句都拿回原网页逐字比对过，对不上的标红，不算进结论。方括号编号和上文 [1][2]、文末来源列表是同一套。</p><table>
+    <tbody><tr><th>来源</th><th>原句</th><th>立场</th><th>网站</th><th>核对</th></tr><tr><td class="n"><a href="https://zh.wikisource.org/zh-hans/%E5%85%AD%E8%97%9D%E4%B9%8B%E4%B8%80%E9%8C%B2_(%E5%9B%9B%E5%BA%AB%E5%85%A8%E6%9B%B8%E6%9C%AC)/%E5%8D%B7152" target="_blank" rel="noopener">[2]</a></td><td class="q">「太宗崩中书令禇遂良奏兰亭乃先帝所重不可留遂殉葬昭陵」</td>
+      <td><span class="tag st-支持">支持</span></td>
+      <td><a href="https://zh.wikisource.org/zh-hans/%E5%85%AD%E8%97%9D%E4%B9%8B%E4%B8%80%E9%8C%B2_(%E5%9B%9B%E5%BA%AB%E5%85%A8%E6%9B%B8%E6%9C%AC)/%E5%8D%B7152" target="_blank" rel="noopener">zh.wikisource.org</a><br><span class="tag t-官方">原典/权威</span></td>
+      <td><span class="ok">原文一致</span></td></tr><tr><td class="n"><a href="https://zh.wikisource.org/wiki/%E5%85%AD%E8%97%9D%E4%B9%8B%E4%B8%80%E9%8C%B2_(%E5%9B%9B%E5%BA%AB%E5%85%A8%E6%9B%B8%E6%9C%AC)/%E5%8D%B7152" target="_blank" rel="noopener">[13]</a></td><td class="q">「及奉諱之日用玉匣貯之藏於昭陵」</td>
+      <td><span class="tag st-支持">支持</span></td>
+      <td><a href="https://zh.wikisource.org/wiki/%E5%85%AD%E8%97%9D%E4%B9%8B%E4%B8%80%E9%8C%B2_(%E5%9B%9B%E5%BA%AB%E5%85%A8%E6%9B%B8%E6%9C%AC)/%E5%8D%B7152" target="_blank" rel="noopener">zh.wikisource.org</a><br><span class="tag t-官方">原典/权威</span></td>
+      <td><span class="ok">原文一致</span></td></tr><tr><td class="n"><a href="https://zh.wikisource.org/zh-hans/%E7%A9%80%E5%B1%B1%E7%AD%86%E9%BA%88/15" target="_blank" rel="noopener">[3]</a></td><td class="q">「世传《兰亭帖》殉葬昭陵是也,然以史考之,此本复出人间矣」</td>
+      <td><span class="tag st-反驳">反驳</span></td>
+      <td><a href="https://zh.wikisource.org/zh-hans/%E7%A9%80%E5%B1%B1%E7%AD%86%E9%BA%88/15" target="_blank" rel="noopener">zh.wikisource.org</a><br><span class="tag t-官方">原典/权威</span></td>
+      <td><span class="ok">原文一致</span></td></tr><tr><td class="n"><a href="https://zh.wikisource.org/zh-hans/%E7%A9%80%E5%B1%B1%E7%AD%86%E9%BA%88/15" target="_blank" rel="noopener">[3]</a></td><td class="q">「锺、王笔迹纸墨如新,韬悉取之,遂传人间」</td>
+      <td><span class="tag st-反驳">反驳</span></td>
+      <td><a href="https://zh.wikisource.org/zh-hans/%E7%A9%80%E5%B1%B1%E7%AD%86%E9%BA%88/15" target="_blank" rel="noopener">zh.wikisource.org</a><br><span class="tag t-官方">原典/权威</span></td>
+      <td><span class="ok">原文一致</span></td></tr><tr><td class="n"><a href="https://www.dpm.org.cn/collection/handwriting/228277.html" target="_blank" rel="noopener">[1]</a></td><td class="q">「唐太宗李世民酷爱羲之书法,在得到《兰亭序》真迹后,曾命当朝书法名家褚遂良、欧阳询」</td>
+      <td><span class="tag st-相关">相关</span></td>
+      <td><a href="https://www.dpm.org.cn/collection/handwriting/228277.html" target="_blank" rel="noopener">故宫博物院</a><br><span class="tag t-官方">原典/权威</span></td>
+      <td><span class="ok">原文一致</span></td></tr></tbody></table></section><section class="sec"><h3>相关视频</h3><p class="hint">B 站视频，可直接播放，用来对照原片画面。</p><div class="videos"><div>
+      <p><a href="https://bilibili.com/video/BV1p8ncz5ES1/" target="_blank" rel="noopener">雨落昭陵:在昭陵与碑林追寻大唐太宗的辉煌背影｡</a></p></div><div>
+      <p><a href="https://bilibili.com/video/BV1aeDSYhEo7/" target="_blank" rel="noopener">文物真假论,唐太宗,武则天李治,兰亭序之谜,邓丁三老师历史知识讲解,古董文物</a></p></div><div>
+      <p><a href="https://bilibili.com/video/BV1tMScB6EBJ/" target="_blank" rel="noopener">全世界最大的帝王陵,耗费107年才建城,李世民的昭陵为何建在有风水隐患的九嵕山</a></p></div></div></section><section class="sec"><h3>来源构成</h3><p class="hint">提到这个具体点的 14 个网页里，各类来源的占比。官方和百科越多越可靠，问答农场多半是机器生成的。</p>
+    <div class="mix"><i style="width:50%;background:var(--t-off)" title="官方 7"></i><i style="width:7.142857142857142%;background:var(--t-wiki)" title="百科 1"></i><i style="width:14.285714285714285%;background:var(--t-media)" title="媒体 2"></i><i style="width:28.57142857142857%;background:var(--mute)" title="其他 4"></i></div>
+    <div class="legend"><span><b style="background:var(--t-off)"></b>原典/权威 7</span><span><b style="background:var(--t-wiki)"></b>百科 1</span><span><b style="background:var(--t-media)"></b>媒体 2</span><span><b style="background:var(--mute)"></b>其他 4</span></div></section><section class="sec"><details><summary>调查过程（10 次元宝搜索，79 个网页）</summary><ol class="timeline" style="margin-top:12px">
+      <li>领域：名言·文史；识别为说法，要核实：《兰亭序》真迹是否确实陪葬在唐太宗昭陵中，这一说法有无原始文献依据、是否属传说或学界争议</li>
+      <li>定位用的细节词：兰亭序、真迹、陪葬、昭陵、唐太宗、殉葬、五代、温韬、盗掘、辩才</li>
+      <li>元宝搜索「兰亭序 真迹 陪葬 昭陵 唐太宗」：20 条</li><li>元宝搜索「兰亭序 昭陵 温韬 盗掘 传说」：19 条</li><li>元宝搜索「兰亭序 真迹 下落 争议 辟谣」：20 条</li><li>元宝搜索「唐太宗 兰亭序 殉葬 记载 出处」：20 条</li><li>元宝搜索「王羲之 《兰亭序》真迹陪葬在唐太宗的昭陵里」：20 条</li><li>元宝搜索「王羲之 兰亭序 昭陵」，限定在 zh.wikisource.org：10 条</li><li>元宝搜索「王羲之 兰亭序 昭陵」，限定在 ctext.org：10 条</li><li>元宝搜索「王羲之 兰亭序 昭陵」，限定在 zdic.net：10 条</li><li>元宝搜索「王羲之 兰亭序 昭陵」，限定在 piyao.org.cn：0 条</li>
+      <li>79 个网页中，66 个提到了这个具体点，取前 14 个交给模型</li>
+      <li>模型引用 5 句，原文核对通过 5 句</li></ol></details></section><section class="sec"><details><summary>提到这个具体点的全部来源（14）</summary><div class="src "><a href="https://www.dpm.org.cn/collection/handwriting/228277.html" target="_blank" rel="noopener">[1] 【王羲之行书兰亭序卷(传唐褚遂良摹本)】</a>
+      <span class="tag t-官方">原典/权威</span> <span class="meta" style="display:inline">故宫博物院 2015/04/01</span>
+      <p>【王羲之行书兰亭序卷(传唐褚遂良摹本)】。【王羲之行书兰亭序卷(传唐褚遂良摹本)】 故00002789 文物号即馆藏文物的登记号,是每件文物唯一标识,不会重复使用。 …… 【王羲之行书兰亭序卷(传唐褚遂良摹本)】 。 《王羲之行书兰亭序》卷(传唐褚遂良摹本),晋,王羲之书,唐,褚遂良摹,纸本,行书,纵24厘米,横88.5厘米。 …… 唐太宗李世民酷爱羲之书法,在得到《兰亭序》真迹后,曾命当朝书法名家褚遂良、欧阳询以及弘文馆拓书人冯承素等勾摹数本,分赐臣下,以广布扬。</p></div><div class="src "><a href="https://zh.wikisource.org/zh-hans/%E5%85%AD%E8%97%9D%E4%B9%8B%E4%B8%80%E9%8C%B2_(%E5%9B%9B%E5%BA%AB%E5%85%A8%E6%9B%B8%E6%9C%AC)/%E5%8D%B7152" target="_blank" rel="noopener">[2] 六艺之一录 (四库全书本)/卷152</a>
+      <span class="tag t-官方">原典/权威</span> <span class="meta" style="display:inline">zh.wikisource.org 2016/10/14</span>
+      <p>库全书 六艺之一录卷一百五十二 钱唐倪涛撰 法帖论述二十二 桑世昌兰亭考 纪原 兰亭者晋右军将军会稽内史琅琊王羲之逸少所书之诗序也〈云云〉 右唐何延之兰亭记〈见前法书要录〉 王右军兰亭序梁乱出外陈天嘉中为僧所得至大建中献于宣帝隋平陈日或以献晋王王不之宝后智果从帝借拓及登极竟不从索果师死后弟子僧言得之太宗为秦王日见拓本惊喜乃贵价市大王书兰亭终不至也乃遣问辨才师欧阳询就赵州求得之以武德四年入秦府贞观十年乃拓十本以赐近臣太宗崩中书令禇遂良奏兰亭乃先帝所重不可留遂殉葬昭陵 右刘𫗧传记 太宗正观中搜访王右军真迹出御府金帛为购赏由是人间古本纷然毕进其草迹又令禇河南真书小字帖纸影之其古本亦有是梁隋官本者梁则满骞徐僧权沈炽文朱异隋则江揔姚察等署记其后兰亭一本相传云将入昭陵玄宫长安神龙之际太平安乐公主奏借出外拓写乐毅论因此遂失所在 右韦述集贤记 禇遂良撰晋右军王羲之书目内行书五十八卷共二百六十帖以兰亭叙为第一后跋云正书行书自贞观八年河南公禇遂良于禁中西堂临写之际录出唐初有史曰实录此之标目盖其类也 右唐张彦远法书要录 何延之兰亭记云王逸少永和九年兰亭修祓禊之礼挥毫制序兴乐而书用蚕茧纸鼠须笔遒媚劲健绝代更无凡二十八行三百二十四字字有重者皆访别体就中之字最多又尚书故事云唐太宗酷好法书有大王真迹三千六百纸率以一丈二尺为一轴内行书有五十八卷禇遂良以兰亭为第一太宗宝惜者独此书为最置于坐侧朝夕观览尝一日附耳语高宗曰吾千秋万岁后与吾兰亭将去也及奉讳之日用玉匣贮之藏于昭陵 右周越法书苑 武德四年秦王俾欧阳询诈求得之遂入秦府麻道嵩拓二本一与辨才一王自收尝留肘腋间后从禇遂良请殉葬昭陵 右南郡新书 世昌尝于范觉民丞相家见五字不损本甚奇后有雪溪跋首载此条颇详南郡新书云兰亭帖武德四年欧阳询从越僧求之始入秦王府麻道嵩奉教拓两本一送辨才一秦王自收嵩私拓一本于时天下草创秦王虽亲总戎兰亭不去肘腋及即位后学愈不倦至贞观二十三年禇遂良请入昭陵天下所见但橅本耳馀与推评门所述同 唐太宗购晋人书自二王以下仅千轴独兰亭文以玉匣葬昭陵世无复见馀皆在秘府至武后时为张易之兄弟所窃换遂流落人间多在王涯张延赏家涯败时为军人所劫夺取金玉轴而弃其书余尝于李都尉〈玮〉处见晋人数帖皆有小印涯字意其为王氏物也故孙莘老求墨 …… 作一重橅石第一本墨深第二本墨浅第三本又加浅世谓之蝉翼本字差大有写法亦不可废先君通籍秘殿详闻此说不可不广近康与之云与石俱载以北又宋定国尝从北使云在所谓中京者因并记之 右荣𦬊跋 定武兰亭序石世称善本〈云云〉 右养浩书室书〈见前兰亭博议〉 右何薳子楚所著春渚记闻其真稿见存汪氏家余近以其所传因考康与之跋续氏所藏及沈虞卿题游氏本皆采纪闻中语独此跋为详但其文互有去取姑从而窜定云世昌书 李文和遵勉其家书画最富有怀仁真迹集右军圣教序贞观兰亭诗序山阴帖乐毅论皆冠世之宝 右李氏遗事 支仲元凤翔人工画人物有老子诫徐甲萧翼赚兰亭商山四皓等图传于世 右图写人物一轴凡五軰唐右丞相阎立本笔一书生状者唐太宗朝西台御史萧翼也一老僧状者智永嫡孙会稽比丘辩才也太宗雅好法书闻辩才宝藏其祖智永所蓄右将军王羲之兰亭修禊叙真迹遣萧翼出使求之翼至会稽不与州郡通变姓名易士服径诣辩才朝暮还往情意习洽一日因论右军笔迹悉以所携御府诸帖示辩才相与反复折难真赝优劣以激发之辩才乃云老僧有永禅师所宝右军兰亭真迹非此可拟藏之梁间不使人知与君相好因以相示翼既见之即出太宗诏札以字轴置怀䄂阎立本所图盖状此一叚事迹书生意气扬扬有自得之色老僧口张不呿有失志之态执事二人其嘘气止沸者其状如生非善写貎驰誉丹青者不能办此上有三印其一内合同印其一大章漫灭难辩皆印以朱其一集贤院图书印印</p></div><div class="src "><a href="https://zh.wikisource.org/zh-hans/%E7%A9%80%E5%B1%B1%E7%AD%86%E9%BA%88/15" target="_blank" rel="noopener">[3] 谷山笔麈/15</a>
+      <span class="tag t-官方">原典/权威</span> <span class="meta" style="display:inline">zh.wikisource.org 2017/06/24</span>
+      <p>世传《兰亭帖》殉葬昭陵是也,然以史考之,此本复出人间矣。五代贼帅温韬盗发唐帝诸陵,见昭陵宫室闳丽,不异人间,中为正寝,东西厢列石床,床上石函中为铁匣,悉藏前代图书,锺、王笔迹纸墨如新,韬悉取之,遂传人间,此知《兰亭》真帖出自昭陵,人间必有其本,第不知复沦没于何代耳。 …… 唐太宗时,林邑献五色鹦鹉,自言苦寒,思归其国,太守付使归之。</p></div><div class="src "><a href="https://zh.wikisource.org/zh-hans/%E5%85%AD%E8%97%9D%E4%B9%8B%E4%B8%80%E9%8C%B2_(%E5%9B%9B%E5%BA%AB%E5%85%A8%E6%9B%B8%E6%9C%AC)/%E5%8D%B7159" target="_blank" rel="noopener">[4] 六艺之一录 (四库全书本)/卷159</a>
+      <span class="tag t-官方">原典/权威</span> <span class="meta" style="display:inline">zh.wikisource.org 2016/10/14</span>
+      <p>十日 朱光裔李之仪观元丰五年三月二十七日 李秬王景通同观〈阙〉戌七月十八日 王景修张㤗宁同观 元丰四年孟春十日又同张保清冯绎纵观文安王景修题 仇伯玉朱光庭石苍舒观元丰五年四月廿八日昭陵永閟千年迹定武相传几样碑此是中原第一本石今焉往落东夷 君家何处得此纸刻画烂然犹可喜六丁神物好䕶持更有诸贤题姓字 环涧王容敬题 右定武兰亭古本平章冀国文定郝公家旧物也公子嗣于参政初学翁取愚古𬭚于一遂以此见恵时公有三本皆是一石所拓以此卷有前宋诸公题名故择以见 …… 斋四月十日重识 明年暮春三月重阅 天历二年四月十日阅于愿学斋因换签题 天统乙亥三月清明日重阅 至正乙酉十一月十一日太原王守诚观 至正丁亥三月三日因阅重识 愚尝界幅纸求松雪赵公书公临兰亭序见寄后题略云古今善书者必以王右军为称首右军诸帖当以兰亭修禊序为第一彦晖当知此意也其言可谓要而不烦矣愚幼知学此因公之言加笃好焉郝府所藏二本与此同一石拓者一本题云尚书何𣓨题其一本则松雪翁困学鲜于氏之所审定也此本必尝为二公所观岂以宋贤题识为定遂不复有云以示让 …… 素与初学翁之家督至道待制同事史院情谊若骨肉未尝及此帖何耶吴徴君大梁相见剧谈数日欢若平生亦不以相示两公皆当世博学君子感念存没临书长叹临川危素识 翰墨风流冠古今鹅池谁不赏山阴此书虽向昭陵朽刻石犹能易万金 右宋南公题定武兰亭诗附录于前此诗为识者指迷不点俗目近光堂史豫章熊梦祥书于凤凰台之松雪寓轩 绅在吴中见吴兴赵公所收定武时新得于一僧公方赴召自杭抵京舟中题者十有七次此本乃大梁吴徴君所藏先后题者七次乃知二公笃好之情南北千里相契如此但恨二公今皆仙去未得交相题识以为世宝乃使若绅者执笔卷末不胜怆然齐郡张绅谨识辨说兰亭犹聚讼精良此刻更何疑辨才付嘱昭陵后玉匣为尘世祚移 倪瓉壬子人日 近临川饶氏家多书法藏兰亭数十本晩始获定武一刻酬以厚直每有至宝难得之叹今此本纸墨尤旧固知复不易得矣廉彦宜宝之渤海高启题 唐石刻兰亭在石晋时契丹入中国遗落魏郡至宋守臣始以献于朝徽庙甚宝惜之已而女真复入中国挟之以去此石两遭兵燹之祸而墨本尚存当为中国千万年宝也洪武壬子秋稽岳王彝识 昭陵以茧纸从葬世不幸不得以见真迹犹幸得见定武本故后人摹效仿佛乎晋风此帖墨纸佳拓手高宜宝藏也张适 兰亭旧刻 至元四年春二月廿五日奎章阁学士院鉴书博士柯九思曾观 兰亭书家之楷则学者未有舎此而能者也今观此刻虽后定武世亦罕有得之可尚矣赵雍 岩借观累日得其妙处石民瞻 欧阳永叔尝跋兰亭叙谓真本已归昭陵世所传本尤多而皆不同盖唐数家所临也其真伪优劣览者当自择焉今观此刻与寻常所见者亦异永叔之言亦信矣干文传题 已赚君亲走晋阳老僧犹未识萧郎圣图本谓天同大谁谓桥山善守藏 右题萧翼赚兰亭图遂昌郑元祐兰亭帖不问刻之精否见者无不爱玩为其流风馀韵有可挹也苏人钱良右 兰亭诗</p></div><div class="src "><a href="https://ctext.org/wiki.pl?if=en&amp;chapter=304777&amp;remap=gb" target="_blank" rel="noopener">[5] 六藝之一錄 : 卷一百五十七 - Chinese Text Project</a>
+      <span class="tag t-官方">原典/权威</span> <span class="meta" style="display:inline">ctext.org </span>
+      <p>《卷一百五十七》[View] [Edit] [History] 1 钦定四库全书 2 六艺之一録卷一百五十七 钱唐倪涛撰法帖论述二十七 3 宋俞松兰亭续考一 4 茧纸鼠须真迹不可复见惟定武石本典刑具在展玩无不满人意此帖所宜寳也 5 右绍兴癸丑嵗 6 高皇赐郑谌本有御笔复古殿书四字下用御书之寳藏俞松家李秀岩有跋在后 7 世传太史箴大雅吟黄庭经乐毅论遗敎经兰亭记逸少竒迹而太史箴大雅吟不复传黄庭虽有本然殊不类似后世依仿而托之者遗敎经 …… 南斋杜守云兰亭记永嘉之乱亡其石而张彦逺书断云右军修禊事时三十三嵗挥毫制序于时寳之贞观中入于内府文皇帝令拓书人赵模韩道政冯承素诸葛贞等四人各拓数本以赐皇太子诸王近臣后以玉匣盛贮随●于昭陵然永嘉之乱乃是懐帝懐帝䝉尘辛未嵗至穆帝永和癸丑嵗相去四十二年岂非传之误耶因志于此用祛羣惑耳治平乙巳中元日闲闲堂记 8 右鲁子学本后归沈虞卿兰亭乐毅东方先生三帖皆絶妙然摸冩屡传犹有昔人用笔意思比之遗教经则有间矣元丰二年上已日冩 9 右东坡跋官本法帖 10 兰 …… 阳蔡肇天啓题右李鳯山所藏本 17 先君所藏定本修禊序爱之甚切今观此刻宜在季孟之间绍兴九年嵗次己未春三吴吴说跋 18 右王岐公本藏俞松家 19 钱及之于工部外郎薛伯常所藏兰亭曰兰亭自唐太宗刋在玉石后流落民间世以定本为贵云云 右钱及之跋见前 20 右藏俞松家 21 王羲之兰亭诗序真迹唐贞观中御史萧翼就㑹稽僧得之诏内供奉摹冩赐功臣时禇遂良在定武再摸于石真迹后入昭陵世不复见自唐以来所传惟寳定武本当时印取已多缺去㑹字此石自宣和间又归内府亦不复见矣今古摹刻响拓奚翅数十百卒非识者眼中物按张彦逺书法要録云羲之复书此叙凡三十终不类初以是知无心之妙亦不自知也能造此理可以学道侨寓南安观知白所藏定武真本旅愁顿觧建炎二年五月二十六日宋</p></div><div class="src "><a href="https://arts.cctv.com/dc/a/index.shtml?articalID=ARTIgftVhaDdPPDLv8k6IY1O160505" target="_blank" rel="noopener">[6] 《兰亭序》真迹究竟在哪里</a>
+      <span class="tag t-媒体">媒体</span> <span class="meta" style="display:inline">央视网 2016/05/05</span>
+      <p>《兰亭序》真迹究竟在哪里。《兰亭序》真迹究竟在哪里 《兰亭序》被称为“天下第一行书”,历代书法界将其奉为极品。 …… 不过,《兰亭序》真迹最终还是没有逃脱落入帝王家的命运,被唐太宗李世民所得,并在他去世后作为陪葬,埋进昭陵,从此下落不明。 …… 《兰亭序》的真迹,一直被智永珍藏,临去世时将其传给弟子辩才。</p></div><div class="src "><a href="https://baike.baidu.com/tashuo/browse/content?id=7192586ed55540352b1a51ce" target="_blank" rel="noopener">[7] 《兰亭序》之谜:赝品卖出了天价,真迹却失传千年</a>
+      <span class="tag t-百科">百科</span> <span class="meta" style="display:inline">百度百科 2022/06/10</span>
+      <p>《兰亭序》之谜:赝品卖出了天价,真迹却失传千年。《兰亭序》之谜:赝品卖出了天价,真迹却失传千年 在宋人笔记《醴泉笔录》还有一段细思极恐的记载:“赵安玉客长安,购唐太宗骨葬昭陵。 …… 会稽山间,王羲之醉笔写成的**《兰亭序》(也称《兰亭集序》),跨越了1600多年的时空,始终是中国文学与艺术的一座高峰,号称“天下第一行书”**。 但是,我们现在看到的各版《兰亭序》都是摹本,唐代以后,《兰亭序》真迹下落不明,至今成谜。 ▲[唐]冯承素摹:“神龙本”《兰亭序》(局部)。图源:网络 王羲之的《兰亭序》被推崇为“天下第一行书”,离不开其头号粉丝李世民的追捧。 唐初,李世民为秦王时,偶然间看到了《兰亭序》的拓本。 …… 正是这个“惊喜”,改变了《兰亭序》在中国书法史上的地位。 隋唐以前,王羲之、王献之父子齐名,合称**“二王”**,但《兰亭序》的书法成就鲜有人提及。</p></div><div class="src "><a href="https://culture.hqu.edu.cn/info/1015/1539.htm" target="_blank" rel="noopener">[8] 【书法】《兰亭序》真迹究竟在哪里</a>
+      <span class="tag t-其他">其他</span> <span class="meta" style="display:inline">华侨大学 2016/05/04</span>
+      <p>【书法】《兰亭序》真迹究竟在哪里。《兰亭序》被称为“天下第一行书”,历代书法界将其奉为极品。 …… 不过,《兰亭序》真迹最终还是没有逃脱落入帝王家的命运,被唐太宗李世民所得,并在他去世后作为陪葬,埋进昭陵,从此下落不明。 …… 《兰亭序》的真迹,一直被智永珍藏,临去世时将其传给弟子辩才。</p></div><div class="src "><a href="https://www.ccdi.gov.cn/lswh/wenhua/wenyuan/201807/t20180720_176049.html" target="_blank" rel="noopener">[9] 兰亭序:王羲之笑着笑着就哭了</a>
+      <span class="tag t-其他">其他</span> <span class="meta" style="display:inline">中央纪委国家监委网站 2018/08/06</span>
+      <p>兰亭序:王羲之笑着笑着就哭了。 …… 这次聚会的光芒之璀璨,让你在各种搜索引擎里打下“公元353年”,很可能搜不到上面两件大事,但十有八九能看到:永和九年(公元353年),王羲之写下了《兰亭序》。 消失在历史中的真迹 今天我们看到的《兰亭序》,其实都不是王羲之的真迹。 …… 《兰亭序》写完,王羲之也很满意,据说留给了子孙珍藏。</p></div><div class="src "><a href="https://zjdaily.zjol.com.cn/zjlnb/html/2017-01/13/content_3466949.htm" target="_blank" rel="noopener">[10] 《兰亭序》真迹 几经波折下落不明</a>
+      <span class="tag t-其他">其他</span> <span class="meta" style="display:inline">浙江日报 </span>
+      <p>《兰亭序》真迹 几经波折下落不明。《兰亭序》真迹 几经波折下落不明 《兰亭序》被称为“天下第一行书”,历代书法界将其奉为极品。 …… 不过,《兰亭序》真迹最终还是没有逃脱落入帝王家的命运,被唐太宗李世民所得,并在他去世后作为陪葬,埋进昭陵,从此下落不明。 …… 珍藏寺庙衍生几多典故 和《兰亭序》关系紧密的其中一人,叫王法极,法号智永,他继承了王羲之的衣钵。</p></div><div class="src "><a href="https://discovery.cctv.com/20071016/102198.shtml" target="_blank" rel="noopener">[11] 王羲之与《兰亭序》之谜</a>
+      <span class="tag t-媒体">媒体</span> <span class="meta" style="display:inline">央视网 2007/10/16</span>
+      <p>王羲之与《兰亭序》之谜。 …… 他行书字帖《兰亭序》是他的的代表作,被书法界誉为“天下第一行书”,千百年来倾倒了无数习书者。 …… 他亲自为《晋书》撰《王羲之传》,搜集、临摹、欣赏王羲之的真迹,《兰亭序》摹制多本,赐给群臣。</p></div><div class="src "><a href="http://epaper.01ny.cn/http_wb/page/2/2016-05/10/W9/20160510W9_pdf.pdf" target="_blank" rel="noopener">[12] 《兰亭序》真迹究竟在哪里</a>
+      <span class="tag t-其他">其他</span> <span class="meta" style="display:inline">南阳网 </span>
+      <p>《兰亭序》真迹究竟在哪里。 …… 01 16 6 年年55月月110 0 日日星星期 期二 副 副主 主编 编: :马 马潇 潇潇 潇创创意 意: :杜 杜跃 跃东 东质质检 检: :杨杨凤凤09 核心阅读 《 兰亭序》被称为 “ 天下第 一行书”,历代书法界将其奉为 极品。 …… 不过, 《 兰亭序》真迹最 终还是没有逃脱落入帝王家的 命运,被唐太宗李世民所得,并 在他去世后作为陪葬, 埋进昭 陵,从此下落不明。</p></div><div class="src "><a href="https://zh.wikisource.org/wiki/%E5%85%AD%E8%97%9D%E4%B9%8B%E4%B8%80%E9%8C%B2_(%E5%9B%9B%E5%BA%AB%E5%85%A8%E6%9B%B8%E6%9C%AC)/%E5%8D%B7152" target="_blank" rel="noopener">[13] 六藝之一録 (四庫全書本)/卷152 - 维基文库,自由的图书馆</a>
+      <span class="tag t-官方">原典/权威</span> <span class="meta" style="display:inline">zh.wikisource.org 2016/10/14</span>
+      <p>死後弟子僧言得之太宗為秦王日見搨本驚喜乃貴價市大王書蘭亭終不至也乃遣問辨才師歐陽詢就趙州求得之以武德四年入秦府貞觀十年乃搨十本以賜近臣太宗崩中書令禇遂良奏蘭亭乃先帝所重不可留遂殉葬昭陵 右劉餗傳記 太宗正觀中搜訪王右軍真蹟出御府金帛為購賞由是人間古本紛然畢進其草迹又令禇河南真書小字帖紙影之其古本亦有是梁隋官本者梁則滿騫徐僧權沈熾文朱異隋則江揔姚察等署記其後蘭亭一本相傳云將入昭陵𤣥宫長安神龍之際太平安樂公主奏借出外搨寫樂毅論因此遂失所在 右韋述集賢記 禇遂良撰晉右軍王羲之書目内行書五十八卷共二百六十帖以蘭亭叙為第一後跋云正書行書自貞觀八年河南公禇遂良於禁中西堂臨寫之際錄出唐初有史曰實錄此之標目蓋其類也 右唐張彦逺法書要錄 何延之蘭亭記云王逸少永和九年蘭亭脩祓禊之禮揮毫製序興樂而書用蠶蠒紙鼠鬚筆遒媚勁健絶代更無凡二十八行三百二十四字字有重者皆訪别體就中之字最多又尚書故事云唐太宗酷好法書有大王真蹟三千六百紙率以一丈二尺為一軸内行書有五十八卷禇遂良以蘭亭為第一太宗寳惜者獨此書為最置於坐側朝夕觀覧嘗一日附耳語高宗曰吾千秋萬歲後與吾蘭亭將去也及奉諱之日用玉匣貯之藏於昭陵 右周越法書苑 武德四年秦王俾歐陽詢詐求得之遂入秦府麻道嵩搨二本一與辨才一王自收嘗留肘腋間後從禇遂良請殉葬昭陵 右南郡新書 世昌嘗於范覺民丞相家見五字不損本甚奇後有雪溪跋首載此條頗詳南郡新書云蘭亭帖武德四年歐陽詢從越僧求之始入秦王府麻道嵩奉教搨兩本一送辨才一秦王自收嵩私搨一本于時天下草創秦王雖親總戎蘭亭不去肘腋及即位後學愈不倦至貞觀二十三年禇遂良請入昭陵天下所見但橅本耳餘與推評門所述同 唐太宗購晉人書自二王以下僅千軸獨蘭亭文以玉匣葬昭陵世無復見餘皆在秘府至武后時為張易之兄弟所竊換遂流落人間多在王涯張延賞家涯敗時為軍人所刼奪取金玉軸而棄其書余嘗於李都尉〈瑋〉處見晉人數帖皆有小印涯字意其為王氏物也故孫莘老求墨妙亭詩有云蘭亭蠒紙入昭陵世間遺迹猶龍騰〈全篇見後〉 右東坡集 右軍禊飲叙草號稱最得意書〈云云〉 右山谷集〈見前〉 正觀末太宗一日附語髙宗吾欲就爾求一物可乎髙宗跼足俯伏從之對曰身體髮膚受之父母國家天下陛下所賜此外更欲問臣求何物太宗曰吾千秋萬歲後欲將蘭亭何如髙宗再拜哽噎而已至昭陵作治以玉匣内之𤣥堂其後昭陵累經開發蘭亭復出人間元豐末有人自兩浙與織女支機石同賫入京師至太康縣值裕陵奉諱不獲上之質錢於民間而去今不復聞存没王欽若云支機石余嘗見其圜可方二寸不圜微宛正碧天漢左界北斗經其上太宗在唐不世主也一書之微生以計取死以愛求生猶可玩死將何為哉與夫富民多藏厚葬者無以異也 …… 得蘭亭凡三召辯才詰之固稱洊經喪亂亡失不知所在後遣監察御史蕭翼微服為書生以詭辨才而得之命供奉搨書人趙模韓道政馮承素諸葛貞等四人各搨數本以賜皇太子諸王近臣貞觀二十三年髙宗奉遺詔以蘭亭入昭陵唯趙模所搨者傳於世事見何延之蘭亭記〈秦觀此跋乃刪取何延之記中語〉 右淮海題跋 此文自唐明皇得之〈云云〉 右碧岫道人趙秷跋〈見前蘭亭博議 桑仲昌云明當作文恐悮也〉 宣和中詔宣定武衙校舊人問蘭亭石對曰慶歴中宋祁帥鎮日有學究李姓者藏此石死於妓家樂營将孟永清者得以</p></div><div class="src "><a href="https://zh.wikisource.org/wiki/%E8%98%AD%E4%BA%AD%E8%80%83_(%E5%9B%9B%E5%BA%AB%E5%85%A8%E6%9B%B8%E6%9C%AC)/%E5%85%A8%E8%A6%BD" target="_blank" rel="noopener">[14] 兰亭考 (四库全书本)/全览</a>
+      <span class="tag t-官方">原典/权威</span> <span class="meta" style="display:inline">zh.wikisource.org </span>
+      <p>他务从省文多失事实或戾本意其最甚者序文本亦条达可观亦窜改无完篇首末缺漏文理㫁续于其父犹然深可怪也云云是此书经高似孙窜改已非世昌之旧矣今未见博议原本无由验振孙所论之是非然是书为王羲之兰亭序作集字为文其事无预于羲之羲之他书其事无预兰亭似孙所删深合㫁限振孙亦不能不以为当也其中评议不同者如或谓梁乱兰亭本出外陈天嘉中为智永所得又或谓王氏子孙传掌至七代孙智永此兰亭真迹流传之不同也又如或谓石晋之乱乘石刻于中山宋初归李学究李死其子摹以售人后负官缗宋祁为定武帅出公帑买之置库中又或谓有游士携此石走四方其人死营妓家伶人取以献宋祁又或谓唐太宗以榻本赐方镇惟定武用玉石刻之世号定武本薛绍彭见公厨有石镇肉乃别刻石易之此又定武石刻流传之不同也推评条下据王羲之生于晋惠帝大安二年癸亥则兰亭修禊时年五十有一辨笔阵图所云羲之年三十三书兰亭之误是矣然前卷既引王铚语以刘𫗧之说为是矣而又云于东墅阅高似孙校书画见</p></div></details>
+    <details style="margin-top:10px"><summary>只提到角色或作品、没谈到这个点的网页（11）</summary><div class="src"><a href="https://epaper.gmw.cn/wzb/html/2014-01/25/nw.D110000wzb_20140125_4-08.htm" target="_blank" rel="noopener">兰亭修禊</a> <span class="meta" style="display:inline">光明网</span></div><div class="src"><a href="https://zh.wikisource.org/zh-hans/%E5%8F%A4%E8%A9%A9%E7%B4%80_(%E5%9B%9B%E5%BA%AB%E5%85%A8%E6%9B%B8%E6%9C%AC)/%E5%8D%B7148" target="_blank" rel="noopener">古诗纪 (四库全书本)/卷148</a> <span class="meta" style="display:inline">zh.wikisource.org</span></div><div class="src"><a href="https://zh.wikisource.org/w/index.php?oldid=311879&amp;title=%E6%9B%B8%E6%96%B7" target="_blank" rel="noopener">書斷</a> <span class="meta" style="display:inline">zh.wikisource.org</span></div><div class="src"><a href="https://zdic.net/hant/%e8%98%ad%e4%ba%ad%e6%9c%83" target="_blank" rel="noopener">蘭亭會</a> <span class="meta" style="display:inline">zdic.net</span></div><div class="src"><a href="https://zdic.net/hans/%E5%85%B0%E4%BA%AD" target="_blank" rel="noopener">兰亭的解释汉典</a> <span class="meta" style="display:inline">zdic.net</span></div><div class="src"><a href="https://zdic.net/hans/%E8%A7%9E" target="_blank" rel="noopener">觞</a> <span class="meta" style="display:inline">zdic.net</span></div><div class="src"><a href="https://zdic.net/hans/%E4%B8%80%E8%A7%B4%E4%B8%80%E8%A9%A0" target="_blank" rel="noopener">一觴一詠 成语</a> <span class="meta" style="display:inline">zdic.net</span></div><div class="src"><a href="https://zdic.net/hans/%E4%B8%80%E8%A7%9E%E4%B8%80%E5%92%8F" target="_blank" rel="noopener">一觞一咏的解释汉典</a> <span class="meta" style="display:inline">zdic.net</span></div><div class="src"><a href="https://zdic.net/hant/%E6%B5%81%E8%A7%B4%E6%9B%B2%E6%B0%B4" target="_blank" rel="noopener">流觴曲水 國語辭典</a> <span class="meta" style="display:inline">zdic.net</span></div><div class="src"><a href="https://zdic.net/hans/%E6%B8%B8%E7%9B%AE%E9%AA%8B%E6%80%80" target="_blank" rel="noopener">游目骋怀的解释汉典</a> <span class="meta" style="display:inline">zdic.net</span></div><div class="src"><a href="https://zdic.net/hans/%E5%8F%99/jinyu" target="_blank" rel="noopener"> 敘 说文解字</a> <span class="meta" style="display:inline">zdic.net</span></div></details>
+    <details style="margin-top:10px"><summary>完整报告（Markdown，含 ClaimReview 标准格式）</summary><pre># 查证报告：《兰亭序》真迹陪葬在唐太宗的昭陵里
+
+- 时间：2026/10/24 18:04:08
+- 领域：名言·文史
+- 相关：王羲之
+- 要核实：《兰亭序》真迹是否确实陪葬在唐太宗昭陵中，这一说法有无原始文献依据、是否属传说或学界争议
+
+## 结论：说法有分歧
+《兰亭序》真迹随葬昭陵是唐宋以来流传最广的说法，唐代刘餗、周越等文献均有记载[2][13]；但宋代已有学者指出昭陵被盗后真迹复出人间[3]，故真迹是否仍在陵中并无定论。
+
+&gt; 昭陵是否被盗、真迹是否复出，学界尚有争议，摘录不足以定论。
+
+## 证据（模型引用的原句，已逐字核对；编号对应文末来源列表）
+- [2]【支持】「太宗崩中书令禇遂良奏兰亭乃先帝所重不可留遂殉葬昭陵」 —— [zh.wikisource.org](https://zh.wikisource.org/zh-hans/%E5%85%AD%E8%97%9D%E4%B9%8B%E4%B8%80%E9%8C%B2_(%E5%9B%9B%E5%BA%AB%E5%85%A8%E6%9B%B8%E6%9C%AC)/%E5%8D%B7152)
+- [13]【支持】「及奉諱之日用玉匣貯之藏於昭陵」 —— [zh.wikisource.org](https://zh.wikisource.org/wiki/%E5%85%AD%E8%97%9D%E4%B9%8B%E4%B8%80%E9%8C%B2_(%E5%9B%9B%E5%BA%AB%E5%85%A8%E6%9B%B8%E6%9C%AC)/%E5%8D%B7152)
+- [3]【反驳】「世传《兰亭帖》殉葬昭陵是也,然以史考之,此本复出人间矣」 —— [zh.wikisource.org](https://zh.wikisource.org/zh-hans/%E7%A9%80%E5%B1%B1%E7%AD%86%E9%BA%88/15)
+- [3]【反驳】「锺、王笔迹纸墨如新,韬悉取之,遂传人间」 —— [zh.wikisource.org](https://zh.wikisource.org/zh-hans/%E7%A9%80%E5%B1%B1%E7%AD%86%E9%BA%88/15)
+- [1]【相关】「唐太宗李世民酷爱羲之书法,在得到《兰亭序》真迹后,曾命当朝书法名家褚遂良、欧阳询」 —— [故宫博物院](https://www.dpm.org.cn/collection/handwriting/228277.html)
+
+## 论证图
+```mermaid
+flowchart TB
+C["说法：《兰亭序》真迹陪葬在唐太宗的昭陵&lt;br/&gt;里"]
+V{{"结论：说法有分歧"}}
+S2(["[2] zh.wikisource.&lt;br/&gt;原典/权威"])
+class S2 src
+E0["「太宗崩中书令禇遂良奏兰亭乃先&lt;br/&gt;帝所重不可留遂殉葬昭陵」"]
+S2 --&gt; E0
+E0 --&gt;|支持| C
+class E0 sup
+S13(["[13] zh.wikisource.&lt;br/&gt;原典/权威"])
+class S13 src
+E1["「及奉諱之日用玉匣貯之藏於昭陵」"]
+S13 --&gt; E1
+E1 --&gt;|支持| C
+class E1 sup
+S3(["[3] zh.wikisource.&lt;br/&gt;原典/权威"])
+class S3 src
+E2["「世传《兰亭帖》殉葬昭陵是也,&lt;br/&gt;然以史考之,此本复出人间矣」"]
+S3 --&gt; E2
+E2 --&gt;|反驳| C
+class E2 reb
+E3["「锺、王笔迹纸墨如新,韬悉取之&lt;br/&gt;,遂传人间」"]
+S3 --&gt; E3
+E3 --&gt;|反驳| C
+class E3 reb
+S1(["[1] 故宫博物院&lt;br/&gt;原典/权威"])
+class S1 src
+E4["「唐太宗李世民酷爱羲之书法,在&lt;br/&gt;得到《兰亭序》真迹后,曾命当&lt;br/&gt;朝书法名家褚遂良、欧阳询」"]
+S1 --&gt; E4
+E4 --&gt;|相关| C
+class E4 rel
+C --&gt;|"依据：唐代多种文献记载随葬昭陵，&lt;br/&gt;但宋代文献又称昭陵被盗后真迹复出&lt;br/&gt;，两说互相矛盾，故属学"| V
+class V split
+classDef sup stroke:#1f7a4d,stroke-width:2px
+classDef reb stroke:#c2410c,stroke-width:2px
+classDef rel stroke:#8a94a6,stroke-dasharray:4 3
+classDef src fill:#ffffff,stroke:#8a94a6
+classDef found stroke:#1f7a4d,stroke-width:3px
+classDef part stroke:#b7791f,stroke-width:3px
+classDef twist stroke:#c2410c,stroke-width:3px
+classDef split stroke:#6d28d9,stroke-width:3px
+classDef none stroke:#6b7280,stroke-width:3px
+```
+
+## 调查步骤
+- 细节词：兰亭序、真迹、陪葬、昭陵、唐太宗、殉葬、五代、温韬、盗掘、辩才
+- 元宝搜索「兰亭序 真迹 陪葬 昭陵 唐太宗」：20 条
+- 元宝搜索「兰亭序 昭陵 温韬 盗掘 传说」：19 条
+- 元宝搜索「兰亭序 真迹 下落 争议 辟谣」：20 条
+- 元宝搜索「唐太宗 兰亭序 殉葬 记载 出处」：20 条
+- 元宝搜索「王羲之 《兰亭序》真迹陪葬在唐太宗的昭陵里」：20 条
+- 元宝搜索「王羲之 兰亭序 昭陵」（站内：zh.wikisource.org）：10 条
+- 元宝搜索「王羲之 兰亭序 昭陵」（站内：ctext.org）：10 条
+- 元宝搜索「王羲之 兰亭序 昭陵」（站内：zdic.net）：10 条
+- 元宝搜索「王羲之 兰亭序 昭陵」（站内：piyao.org.cn）：0 条
+- 共 79 个网页，66 个提到细节
+
+## 提到细节的全部来源
+1. [【王羲之行书兰亭序卷(传唐褚遂良摹本)】](https://www.dpm.org.cn/collection/handwriting/228277.html) · 官方 · 故宫博物院
+2. [六艺之一录 (四库全书本)/卷152](https://zh.wikisource.org/zh-hans/%E5%85%AD%E8%97%9D%E4%B9%8B%E4%B8%80%E9%8C%B2_(%E5%9B%9B%E5%BA%AB%E5%85%A8%E6%9B%B8%E6%9C%AC)/%E5%8D%B7152) · 官方 · zh.wikisource.org
+3. [谷山笔麈/15](https://zh.wikisource.org/zh-hans/%E7%A9%80%E5%B1%B1%E7%AD%86%E9%BA%88/15) · 官方 · zh.wikisource.org
+4. [六艺之一录 (四库全书本)/卷159](https://zh.wikisource.org/zh-hans/%E5%85%AD%E8%97%9D%E4%B9%8B%E4%B8%80%E9%8C%B2_(%E5%9B%9B%E5%BA%AB%E5%85%A8%E6%9B%B8%E6%9C%AC)/%E5%8D%B7159) · 官方 · zh.wikisource.org
+5. [六藝之一錄 : 卷一百五十七 - Chinese Text Project](https://ctext.org/wiki.pl?if=en&amp;chapter=304777&amp;remap=gb) · 官方 · ctext.org
+6. [《兰亭序》真迹究竟在哪里](https://arts.cctv.com/dc/a/index.shtml?articalID=ARTIgftVhaDdPPDLv8k6IY1O160505) · 媒体 · 央视网
+7. [《兰亭序》之谜:赝品卖出了天价,真迹却失传千年](https://baike.baidu.com/tashuo/browse/content?id=7192586ed55540352b1a51ce) · 百科 · 百度百科
+8. [【书法】《兰亭序》真迹究竟在哪里](https://culture.hqu.edu.cn/info/1015/1539.htm) · 其他 · 华侨大学
+9. [兰亭序:王羲之笑着笑着就哭了](https://www.ccdi.gov.cn/lswh/wenhua/wenyuan/201807/t20180720_176049.html) · 其他 · 中央纪委国家监委网站
+10. [《兰亭序》真迹 几经波折下落不明](https://zjdaily.zjol.com.cn/zjlnb/html/2017-01/13/content_3466949.htm) · 其他 · 浙江日报
+11. [王羲之与《兰亭序》之谜](https://discovery.cctv.com/20071016/102198.shtml) · 媒体 · 央视网
+12. [《兰亭序》真迹究竟在哪里](http://epaper.01ny.cn/http_wb/page/2/2016-05/10/W9/20160510W9_pdf.pdf) · 其他 · 南阳网
+13. [六藝之一録 (四庫全書本)/卷152 - 维基文库,自由的图书馆](https://zh.wikisource.org/wiki/%E5%85%AD%E8%97%9D%E4%B9%8B%E4%B8%80%E9%8C%B2_(%E5%9B%9B%E5%BA%AB%E5%85%A8%E6%9B%B8%E6%9C%AC)/%E5%8D%B7152) · 官方 · zh.wikisource.org
+14. [兰亭考 (四库全书本)/全览](https://zh.wikisource.org/wiki/%E8%98%AD%E4%BA%AD%E8%80%83_(%E5%9B%9B%E5%BA%AB%E5%85%A8%E6%9B%B8%E6%9C%AC)/%E5%85%A8%E8%A6%BD) · 官方 · zh.wikisource.org
+
+## ClaimReview（schema.org 事实核查标准格式）
+```json
+{
+ "@context": "https://schema.org",
+ "@type": "ClaimReview",
+ "datePublished": "2026-10-24",
+ "claimReviewed": "《兰亭序》真迹陪葬在唐太宗的昭陵里",
+ "author": {
+  "@type": "Organization",
+  "name": "元宝考据侦探"
+ },
+ "reviewRating": {
+  "@type": "Rating",
+  "alternateName": "说法有分歧"
+ },
+ "itemReviewed": {
+  "@type": "Claim",
+  "appearance": [
+   {
+    "@type": "CreativeWork",
+    "url": "https://zh.wikisource.org/zh-hans/%E5%85%AD%E8%97%9D%E4%B9%8B%E4%B8%80%E9%8C%B2_(%E5%9B%9B%E5%BA%AB%E5%85%A8%E6%9B%B8%E6%9C%AC)/%E5%8D%B7152"
+   },
+   {
+    "@type": "CreativeWork",
+    "url": "https://zh.wikisource.org/wiki/%E5%85%AD%E8%97%9D%E4%B9%8B%E4%B8%80%E9%8C%B2_(%E5%9B%9B%E5%BA%AB%E5%85%A8%E6%9B%B8%E6%9C%AC)/%E5%8D%B7152"
+   },
+   {
+    "@type": "CreativeWork",
+    "url": "https://zh.wikisource.org/zh-hans/%E7%A9%80%E5%B1%B1%E7%AD%86%E9%BA%88/15"
+   },
+   {
+    "@type": "CreativeWork",
+    "url": "https://zh.wikisource.org/zh-hans/%E7%A9%80%E5%B1%B1%E7%AD%86%E9%BA%88/15"
+   },
+   {
+    "@type": "CreativeWork",
+    "url": "https://www.dpm.org.cn/collection/handwriting/228277.html"
+   }
+  ]
+ }
+}
+```</pre></details>
+    
+    <div class="status">查证时间：2026/10/24 18:04:08</div></section></article></div><div class="casewrap" id="traceon"><h2>二次元原作</h2><article class="case"><div class="case-head"><div>
+      <div class="case-kind">二次元原作，说法，Fate</div>
+      <div class="case-claim">Trace on 是投影魔术的正规魔术师咒文</div>
+      <p class="case-sum big">现有摘录只能证明「Trace on」是卫宫士郎的投影咏唱语<sup><a href="http://www.moegirl.org/%E5%8D%AB%E5%AE%AB%E5%A3%AB%E9%83%8E" target="_blank" rel="noopener" title="www.moegirl.org">[3]</a></sup>，以及士郎的投影属特例<sup><a href="https://baike.baidu.com/item/%E6%8A%95%E5%BD%B1%E9%AD%94%E6%9C%AF" target="_blank" rel="noopener" title="百度百科">[9]</a></sup>，但没有任何一条摘录说明它是否为正规魔术师的通用咒文，因此无法判定该说法真假。</p>
+      <p class="case-sum" style="margin-top:10px;font-size:14px;color:var(--ink2)">缺官方设定集或原作正文对正规投影咒文的直接说明。</p>
+    </div>
+    <div class="stamp v-none" role="img" aria-label="评级：查不到"><b>查不到</b><span>没有原文支持</span>
+      <div class="scale"><i class="on"></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i></div></div>
+  </div><section class="sec"><h3>拆开来看</h3><p class="hint">每一条后面的编号都能点开，直接跳到原网页。</p>
+    <div class="tfu"><div class="c-true"><h4>原文能证实的</h4><ul><li>「Trace on」是卫宫士郎的投影咏唱语 <sup><a href="http://www.moegirl.org/%E5%8D%AB%E5%AE%AB%E5%A3%AB%E9%83%8E" target="_blank" rel="noopener" title="www.moegirl.org">[3]</a></sup></li><li>卫宫士郎的投影属于特例，并非普通投影魔术 <sup><a href="https://baike.baidu.com/item/%E6%8A%95%E5%BD%B1%E9%AD%94%E6%9C%AF" target="_blank" rel="noopener" title="百度百科">[9]</a></sup></li></ul></div>
+    <div class="c-false"><h4>原文不支持的</h4><div class="empty">无</div></div>
+    <div class="c-unk"><h4>没查到的</h4><ul><li>「Trace on」是否为正规魔术师通用的投影咒文</li><li>正规魔术师投影魔术的标准咏唱是什么</li><li>Archer是否使用同一咏唱及其性质</li></ul></div></div></section><section class="sec"><h3>证据怎么推出结论</h3><p class="hint">从上往下读：哪个网站 → 说了哪句原话 → 支持还是反驳 → 得出结论。绿色是支持，橙色是反驳，虚线是相关但不直接。</p>
+    <div class="map"><pre class="mermaid">flowchart TB
+C["说法：Trace on 是投影魔术的正&lt;br/&gt;规魔术师咒文"]
+V{{"结论：查不到"}}
+S3(["[3] www.moegirl.or&lt;br/&gt;百科"])
+class S3 src
+E0["「“ 投影,开始 Trace &lt;br/&gt;on ”」"]
+S3 --&gt; E0
+E0 --&gt;|相关| C
+class E0 rel
+S9(["[9] 百度百科&lt;br/&gt;百科"])
+class S9 src
+E1["「卫宫士郎的投影属于特例」"]
+S9 --&gt; E1
+E1 --&gt;|相关| C
+class E1 rel
+E2["「事实上卫宫士郎的投影其实并非&lt;br/&gt;投影魔术,而是无限剑制的副产&lt;br/&gt;物」"]
+S9 --&gt; E2
+E2 --&gt;|相关| C
+class E2 rel
+C --&gt;|"依据：摘录只涉及士郎个人咏唱与其&lt;br/&gt;投影的特例性，未提及正规魔术师通&lt;br/&gt;用咒文，故无法证实或证"| V
+class V none
+classDef sup stroke:#1f7a4d,stroke-width:2px
+classDef reb stroke:#c2410c,stroke-width:2px
+classDef rel stroke:#8a94a6,stroke-dasharray:4 3
+classDef src fill:#ffffff,stroke:#8a94a6
+classDef found stroke:#1f7a4d,stroke-width:3px
+classDef part stroke:#b7791f,stroke-width:3px
+classDef twist stroke:#c2410c,stroke-width:3px
+classDef split stroke:#6d28d9,stroke-width:3px
+classDef none stroke:#6b7280,stroke-width:3px</pre></div></section><section class="sec"><h3>证据清单</h3><p class="hint">模型引用的每一句都拿回原网页逐字比对过，对不上的标红，不算进结论。方括号编号和上文 [1][2]、文末来源列表是同一套。</p><table>
+    <tbody><tr><th>来源</th><th>原句</th><th>立场</th><th>网站</th><th>核对</th></tr><tr><td class="n"><a href="http://www.moegirl.org/%E5%8D%AB%E5%AE%AB%E5%A3%AB%E9%83%8E" target="_blank" rel="noopener">[3]</a></td><td class="q">「“ 投影,开始 ( Trace on ) ”」</td>
+      <td><span class="tag st-相关">相关</span></td>
+      <td><a href="http://www.moegirl.org/%E5%8D%AB%E5%AE%AB%E5%A3%AB%E9%83%8E" target="_blank" rel="noopener">www.moegirl.org</a><br><span class="tag t-百科">百科</span></td>
+      <td><span class="ok">原文一致</span></td></tr><tr><td class="n"><a href="https://baike.baidu.com/item/%E6%8A%95%E5%BD%B1%E9%AD%94%E6%9C%AF" target="_blank" rel="noopener">[9]</a></td><td class="q">「卫宫士郎的投影属于特例」</td>
+      <td><span class="tag st-相关">相关</span></td>
+      <td><a href="https://baike.baidu.com/item/%E6%8A%95%E5%BD%B1%E9%AD%94%E6%9C%AF" target="_blank" rel="noopener">百度百科</a><br><span class="tag t-百科">百科</span></td>
+      <td><span class="ok">原文一致</span></td></tr><tr><td class="n"><a href="https://baike.baidu.com/item/%E6%8A%95%E5%BD%B1%E9%AD%94%E6%9C%AF" target="_blank" rel="noopener">[9]</a></td><td class="q">「事实上卫宫士郎的投影其实并非投影魔术,而是无限剑制的副产物」</td>
+      <td><span class="tag st-相关">相关</span></td>
+      <td><a href="https://baike.baidu.com/item/%E6%8A%95%E5%BD%B1%E9%AD%94%E6%9C%AF" target="_blank" rel="noopener">百度百科</a><br><span class="tag t-百科">百科</span></td>
+      <td><span class="ok">原文一致</span></td></tr></tbody></table></section><section class="sec"><h3>相关视频</h3><p class="hint">B 站视频，可直接播放，用来对照原片画面。</p><div class="videos"><div>
+      <p><a href="https://bilibili.com/video/BV1uy411i7wo/" target="_blank" rel="noopener">[REACTION]Fate UBW第8集:我的发?英灵还能召唤英灵?</a></p></div><div>
+      <p><a href="https://bilibili.com/video/BV1z14y1d7Uu/" target="_blank" rel="noopener">【TV动画/泽野弘之】Fate/strange Fake 命运-奇异赝品 TV动画化决定PV【MCE汉化组】</a></p></div><div>
+      <p><a href="https://bilibili.com/video/BV1MK411R7aG/" target="_blank" rel="noopener">【fate】小太阳——迦尔纳,宝具咏唱,彻底燃烧吧——‘日轮啊,顺从死亡(Vasavi Shakti)’!!_哔哩哔哩_bilibili</a></p></div><div>
+      <p><a href="https://bilibili.com/video/BV1t841157eJ/" target="_blank" rel="noopener">【fate】咒腕——哈桑·萨巴赫,宝具咏唱,妄想心音(Zabaniya)｡“那一条没用的胳膊而已,很乐意变成魔神的食物｡”"_哔哩哔哩_bilibili</a></p></div></div></section><section class="sec"><h3>来源构成</h3><p class="hint">提到这个具体点的 14 个网页里，各类来源的占比。官方和百科越多越可靠，问答农场多半是机器生成的。</p>
+    <div class="mix"><i style="width:100%;background:var(--t-wiki)" title="百科 14"></i></div>
+    <div class="legend"><span><b style="background:var(--t-wiki)"></b>百科 14</span></div></section><section class="sec"><details><summary>调查过程（9 次元宝搜索，104 个网页）</summary><ol class="timeline" style="margin-top:12px">
+      <li>领域：二次元原作；识别为说法，要核实：“Trace on 是投影魔术的正规魔术师咒文”这一说法是否属实，还是仅为卫宫士郎/Archer的个人咏唱习惯而非正规魔术师的通用咒文</li>
+      <li>定位用的细节词：投影、Trace on、詠唱、咒文、魔术师、卫宫士郎、Archer、正规</li>
+      <li>元宝搜索「Fate 投影魔术 Trace on 咏唱 咒文」：20 条</li><li>元宝搜索「卫宫士郎 投影 Trace on 咏唱 原文」：20 条</li><li>元宝搜索「Trace on 投影 魔术师 误传 二设」：20 条</li><li>元宝搜索「Fate 投影魔术 咏唱 咒文 正规魔术师」：20 条</li><li>元宝搜索「Fate Trace on 是投影魔术的正规魔术师咒文」：20 条</li><li>元宝搜索「Fate 投影魔术 Trace on」，限定在 moegirl.org.cn：10 条</li><li>元宝搜索「Fate 投影魔术 Trace on」，限定在 bgm.tv：10 条</li><li>元宝搜索「Fate 投影魔术 Trace on」，限定在 fgo.wiki：10 条</li>
+      <li>104 个网页中，69 个提到了这个具体点，取前 14 个交给模型</li>
+      <li>模型引用 3 句，原文核对通过 3 句</li></ol></details></section><section class="sec"><details><summary>提到这个具体点的全部来源（14）</summary><div class="src "><a href="https://baike.sogou.com/v154970363.htm" target="_blank" rel="noopener">[1] 卫宫士郎(《Fate/stay night》中的男主角)</a>
+      <span class="tag t-百科">百科</span> <span class="meta" style="display:inline">搜狗百科 2026/10/20</span>
+      <p>身份:魔术师见习生。 …… 最初,他只能行使简单的强化魔术,但连宝具也能复制的投影魔术的才能,最终得以开花结果。 …… 使用一次强化魔术需要2魔力量,投影一次平均就要消耗5魔力量。</p></div><div class="src "><a href="https://upimg.baike.haosou.com/doc/6093823.html" target="_blank" rel="noopener">[2] 卫宫士郎 - 《Fate/普Stay night》中人物 免费编辑 修改义项名</a>
+      <span class="tag t-百科">百科</span> <span class="meta" style="display:inline">upimg.baike.haosou.com </span>
+      <p>卫宫士郎 - 《Fate/普Stay night》中人物 免费编辑 修改义项名。卫宫士郎 - 《Fate/普Stay night》中人物 免费编辑 修改义项名 所来自属类别 : 游戏人物|动漫人物 游戏人物|动漫人物 编辑分类 卫宫士郎,游戏及同名动画《Fate/Stay night》中的男主角,穗群原学园高中部二年级学生,十年前冬木市第四次圣杯战争引起的火灾中唯一的幸存者。 …… 基本信息 中文名 卫宫士郎 外文名 日文:衛宮 士郎(えみや しろう)、罗马音:Emiya Shirou 其他名称 弓道部的吸尘机、穗群原的Brownie、伪校务员 配音 杉山纪彰、野田顺子(幼年) 登场作品 《FATE》系列 生日 4月15日 性别 男 身高 167cm 体重 …… 角色经历 3角色能力 4角色生活 5人际关系 6角色歌曲 7登场记录 8角色评价 9姓名硫非初载即众奏来源 10奖项荣誉 折叠 编辑本段 角色形象 折叠 身份背景 继承了切嗣意志的魔术师见习生。</p></div><div class="src "><a href="http://www.moegirl.org/%E5%8D%AB%E5%AE%AB%E5%A3%AB%E9%83%8E" target="_blank" rel="noopener">[3] 卫宫士郎 - 萌娘百科 万物皆可萌的百科全书</a>
+      <span class="tag t-百科">百科</span> <span class="meta" style="display:inline">www.moegirl.org </span>
+      <p>卫宫士郎 - 萌娘百科 万物皆可萌的百科全书。 …… 卫宫士郎 欢迎您参与完善《Fate/stay night》系列条目——投影,开始。 欢迎各位愿意做出贡献的御主加入萌娘百科型月编辑群『穗群原学园萌百分园』: 571632697 ~ “ 投影,开始 ( Trace on ) ” P站ID:47565763 基本资料 本名 衛宮 ( えみや ) 士郎 ( しろう ) (Emiya Shirou) 别号 士郎、卫宫同学、学长、伪校务员、弓道部的吸尘器、穗群原的布朗尼、学生会长的生命线、希耶罗(シェロ) 、核弹剑仙 …… 监护人&amp;老师: 藤村大河 好友: 间桐慎二 、 柳洞一成 、 美缀绫子 ; 露维亚 (凛线结局) 恋人: Saber / 远坂凛 / 间桐樱 异时空同位体 : Archer 、 卫宫士郎(魔伊) 、 卫宫士郎(美游世界) 、 千子村正 ( FGO )、 天草四郎时贞 、 宇智波佐助 、 幸平创真 相关图片 “ いくぞ英雄王 ( 要上了英雄王 ) ―――― 武器の貯蔵は充分か ( 武器的储备足够吗 ) ” ——卫宫士郎 卫宫士郎 是TY</p></div><div class="src "><a href="https://wapbaike.baidu.com/view/176581.htm" target="_blank" rel="noopener">[4] 卫宫士郎</a>
+      <span class="tag t-百科">百科</span> <span class="meta" style="display:inline">百度百科 2026/04/23</span>
+      <p>卫宫士郎。卫宫士郎 日本文字冒险游戏《Fate/stay night》及其衍生作品中的男主角 其他7个同名词条 卫宫士郎,日本文字冒险游戏《Fate/stay night》及其衍生作品中的男主角。 …… e、 伪校务员 性别 男 年龄 17岁 出生地 日本冬木市 身高 167 cm 1 体重 58 kg 登场作品 Fate/stay night(游戏及其衍生作品) 身份 学生、见习魔术师、魔术使 演职信息 配音 杉山纪彰、(日本) 野田顺子、(日本·幼年时期) 山姆·里格尔 44 (英语) 教育信息 就读学校 穗群原学园高中部二年级 其他信息 喜欢 家庭料理 讨厌 梅昆布茶 人物关系 查看更多 角色背景 角色设计 奈须:最开始被武内君要 …… 姓名由来 奈须:第八从者吉尔伽美什,最初他的职阶不是Archer,而是(Key) Keeper。</p></div><div class="src "><a href="https://baike.baidu.com/item/%e5%8d%ab%e5%ae%ab%e5%a3%ab%e9%83%8e/3191065" target="_blank" rel="noopener">[5] 卫宫士郎</a>
+      <span class="tag t-百科">百科</span> <span class="meta" style="display:inline">百度百科 2026/04/23</span>
+      <p>卫宫士郎。中文名 卫宫士郎 外文名 衛宮 士郎(えみや しろう) (日文) Emiya Shirou (罗马音) 别名 弓道部的吸尘机 、 穗群原的Brownie 、 伪校务员 身高 167 cm 角色背景 播报 编辑 角色设计 奈须: 最开始被武内君要求“希望这次《 Fate …… 姓名由来 奈须: 第八从者 吉尔伽美什 ,最初他的职阶不是 Archer ,而是(Key) Keeper。 …… 角色形象 播报 编辑 身份背景 继承了切嗣意志的 魔术师 见习生。</p></div><div class="src "><a href="https://baike.sogou.com/v1236116.htm" target="_blank" rel="noopener">[6] 言峰绮礼(《Fate/stay night》中角色)</a>
+      <span class="tag t-百科">百科</span> <span class="meta" style="display:inline">搜狗百科 2026/10/17</span>
+      <p>第四次圣杯战争作为哈桑·萨巴赫(Assassin)和吉尔伽美什(Archer)的御主(Master);第五次圣杯战争作为库·丘林(Lancer)和吉尔伽美什的御主(Master)在暗中活动。 …… 似乎喜欢破坏,不过跟卫宫士郎一样是偏重于“制作”这方面的魔术师。 …… 洗礼咏唱对教会的信徒来说,他们认为魔术是异端的行为、不应学习的东西。</p></div><div class="src "><a href="https://m.baike.haosou.com/doc/5414293-5652435.html" target="_blank" rel="noopener">[7] 无限剑制</a>
+      <span class="tag t-百科">百科</span> <span class="meta" style="display:inline">m.baike.haosou.com </span>
+      <p>目录 目录 能力介绍 基本介绍 相关资料 关于投影誓约胜利... 心象风景 使用者情况 衍生 已知保存武具 炽天覆七重圆环 干将·莫邪 伪·螺旋剑 赤原猎犬 卫宫的弓 必胜黄金之剑 遥远的理想乡 不毁的极圣 无铭·斧剑 宝石剑泽尔里奇 万符必应破戒 永久遥远的黄金剑 陨铁之鞴[原初之火... 轮转胜利之剑 迦耶伯格 欢悦之剑 誓约胜利之剑 虚·开辟千山的翠... 绝·焚驱万海的拂... 格拉姆 赫格尼之剑 方天画戟 Dirk小刀 咏唱咒文 《Fate》中卫宫士郎的魔术 本词条是多义词,共2个义项 展开 收起 无限剑制(Unlimited Bl ade Works),第 五次圣杯战争的卫宫 来自 (Arche r)、卫宫士郎拥 有的固有结界。 …… 而且那里所 360百科 保管着的武具,大部份都 是通过 投影魔术 而被复制可辨别的涵藏必杀之力 的英灵们的宝具。 …… 防具虽也可能,但那样的情 况需要消耗通常投影两倍到三倍的 衡雷离善不排编 魔力。</p></div><div class="src "><a href="http://moegirl.org.cn/C%E5%A6%88" target="_blank" rel="noopener">[8] 美狄亚(Fate) - 萌娘百科 万物皆可萌的百科全书</a>
+      <span class="tag t-百科">百科</span> <span class="meta" style="display:inline">萌娘百科 </span>
+      <p>卫宫士郎欢迎您参与完善《Fate/stay night》系列条目——投影,开始。 …… Fate/stay night 在圣杯战争开始前一段时间,以Caster身份被隶属于魔术协会的一名参战魔术师召唤出来。 …… 根据卫宫士郎前期的选择(对樱的好感度以及是否阻止Saber砍Archer),Caster阵营的活跃度会有很大不同,主要活跃于UBW线。</p></div><div class="src "><a href="https://baike.baidu.com/item/%E6%8A%95%E5%BD%B1%E9%AD%94%E6%9C%AF" target="_blank" rel="noopener">[9] 投影魔术</a>
+      <span class="tag t-百科">百科</span> <span class="meta" style="display:inline">百度百科 2026/01/28</span>
+      <p>投影魔术。投影魔术 《Fate/Stay Night》系列的能力之一 卫宫士郎的投影魔术 01:45 投影魔术咒语 01:53 【FATE 06版 REACTION】第十六集 投影魔术启动,石中剑解放 03:36 投影魔术,日本文字冒险游戏《Fate/Stay Night》中出现的魔术 。 …… 卫宫士郎的投影属于特例,不但魔力消耗较低,而且复制出的物品可以一直存在。投影复制出来的物品还具有真实的内在,拥有接近甚至堪比原版的功效,可以以假乱真,甚至连同原主人对该物品的使用方法和经验都能复制下来(远坂凛曾因此怂恿士郎投影古董名画骗钱)。ubw线中Archer说过士郎这种投影就像是先人降灵附身在自己身上那样,能够很好的运用自如。 HF线剧场版中,士郎直接把Berserker使用射杀百头的12试炼过程全部扫描了一遍,然后投影出射杀百头 。 事实上卫宫士郎的投影其实并非投影魔术,而是无限剑制的副产物,是空想具现化的结果,所以他投影的物品不会消失,可以一直存在。</p></div><div class="src "><a href="https://baike.baidu.com/item/%E5%8D%AB%E5%AE%AB%E5%A3%AB%E9%83%8E/16033747" target="_blank" rel="noopener">[10] 卫宫士郎</a>
+      <span class="tag t-百科">百科</span> <span class="meta" style="display:inline">百度百科 2026/09/29</span>
+      <p>卫宫士郎。订阅更新 4384 有用+1 卫宫士郎(英文名:EMIYA,日文名:エミヤ),游戏《 Fate/stay night 》及其衍生作品中的角色之一。 …… 卫宫士郎,双亲在第四次圣杯战争的火灾中丧生,后被“魔术师杀手”卫宫切嗣救下收为养子,改名为“卫宫士郎”。他是卫宫士郎作为代价而英灵化的形态。精于近身格斗战及弓术,亦擅长对魔术战和家务,本体为未来的卫宫士郎成为守护者后的姿态。 人物关系 卫宫士郎的人物关系 共2个词条 1.1万阅读 卫宫切嗣 养父 藤丸立香 学生 相关星图 查看更多 游戏《Fate/stay night》中的人物 共38个词条 7.2万阅读 卫宫士郎,日本文字冒险游戏《Fate/stay night》及其衍生作品中的男主角。 …… 对于作为最弱的魔术师的自己的主人腿页欠燥是……当做笨蛋来看,不是在藐视而是在戏弄她。</p></div><div class="src "><a href="https://baike.baidu.com/item/Emiya" target="_blank" rel="noopener">[11] 卫宫士郎</a>
+      <span class="tag t-百科">百科</span> <span class="meta" style="display:inline">百度百科 2026/09/29</span>
+      <p>卫宫士郎。订阅更新 4384 有用+1 同义词 Emiya (Emiya)一般指卫宫士郎(日本游戏《Fate/stay night》及其衍生作品中的角色) 卫宫士郎(英文名:EMIYA,日文名:エミヤ),游戏《 Fate/stay night 》及其衍生作品中的角色之一。 …… 卫宫士郎,双亲在第四次圣杯战争的火灾中丧生,后被“魔术师杀手”卫宫切嗣救下收为养子,改名为“卫宫士郎”。他是卫宫士郎作为代价而英灵化的形态。精于近身格斗战及弓术,亦擅长对魔术战和家务,本体为未来的卫宫士郎成为守护者后的姿态。 人物关系 卫宫士郎的人物关系 共2个词条 1.1万阅读 相关星图 查看更多 中文名 卫宫士郎[Archer] 外文名 日文:エミヤ 英文:EMIYA 别名 无名英灵、炼铁之英灵、英灵卫宫、Archer、红A 配音 性别 男 登场作品 日本文字冒险游戏《Fate/stay …… 对于作为最弱的魔术师的自己的主人是……当做笨蛋来看,不是在藐视而是在戏弄她。</p></div><div class="src "><a href="https://baike.baidu.com/item/%E5%8D%AB%E5%AE%AB%E5%A3%AB%E9%83%8E/3191065" target="_blank" rel="noopener">[12] 卫宫士郎</a>
+      <span class="tag t-百科">百科</span> <span class="meta" style="display:inline">百度百科 2026/04/23</span>
+      <p>卫宫士郎。订阅更新 4580 有用+1 卫宫士郎,日本文字冒险游戏《 Fate/stay night 》及其衍生作品中的男主角。 …… 百科图谱 卫宫士郎 《Fate/stay night》关系图 卫宫士郎 阿尔托莉雅·潘德拉贡 美杜莎 卫宫 查看更多 人物关系 卫宫士郎的人物关系 共20个词条 7.9万阅读 卫宫切嗣 养父 爱丽丝菲尔·冯·爱因兹贝伦 养母 伊莉雅丝菲尔·冯·爱因兹贝伦 姐姐 柳洞一成 好友 美缀绫子 好友 间桐慎二 好友 露维亚瑟琳塔·艾德费尔特 好友 巴泽特·弗拉加·马克雷密斯 好友 卡莲·奥尔黛 …… 夜——天之杯:恶兆之花》中的角色 共5个词条 2.1万阅读 动画《Fate/stay night UNLIMITED BLADE WORKS》中的角色 共26个词条 2.2万阅读 卫宫士郎(英文名:EMIYA,日文名:エミヤ),游戏《Fate/stay night》及其衍生作品中的角色之一。</p></div><div class="src "><a href="https://baike.baidu.com/item/%E5%8D%AB%E5%AE%AB/22267019" target="_blank" rel="noopener">[13] 卫宫士郎</a>
+      <span class="tag t-百科">百科</span> <span class="meta" style="display:inline">百度百科 2026/09/29</span>
+      <p>卫宫士郎。卫宫士郎 同义词卫宫(《Fate》系列中登场的Archer之一)一般指卫宫士郎(日本游戏《Fate/stay night》及其衍生作品中的角色) 卫宫士郎(英文名:EMIYA,日文名:エミヤ),游戏《Fate/stay night》及其衍生作品中的角色之一。 …… 卫宫士郎,双亲在第四次圣杯战争的火灾中丧生,后被“魔术师杀手”卫宫切嗣救下收为养子,改名为“卫宫士郎”。他是卫宫士郎作为代价而英灵化的形态。精于近身格斗战及弓术,亦擅长对魔术战和家务,本体为未来的卫宫士郎成为守护者后的姿态。 …… 对于作为最弱的魔术师的自己的主人是……当做笨蛋来看,不是在藐视而是在戏弄她。</p></div><div class="src "><a href="http://moegirl.org.cn/%E8%BF%9C%E5%9D%82%E5%87%9B" target="_blank" rel="noopener">[14] span class"mw-page-title-main"远坂凛/span</a>
+      <span class="tag t-百科">百科</span> <span class="meta" style="display:inline">萌娘百科 </span>
+      <p>卫宫士郎欢迎您参与完善《Fate/stay night》系列条目——投影,开始。 …… | 冬木市 活动范围 | 冬木市→伦敦→新加坡 所属团体 | 私立穗群原学园→魔术协会 亲属或相关人 双亲:远坂时臣、远坂葵 妹妹:远坂樱 师父:言峰绮礼 (UBW线)恋人/徒弟:卫宫士郎 朋友:美缀绫子、莳寺枫 Servant:Archer、Lancer、Saber 冤家:露维亚、柳洞一成 异时空同位体:远坂凛(FE) 凭依:伊什塔尔、埃列什基伽勒、太空伊什塔尔 魔伊:伊莉雅、魔法红宝石 原型:玲珑馆美沙夜、苍崎青子、沙条绫香、奈须蘑菇 相关图片 “ 如果你不为了你自己而活的话 所谓 …… 卫宫士郎的同学,第五次圣杯战争Archer的Master,(在UBW线Archer叛变解除契约后成为Saber的Master),父亲在第四次圣杯战争被其弟子言峰绮礼杀害,之后言峰绮礼成了其监护人(然而凛并不知情)。</p></div></details>
+    <details style="margin-top:10px"><summary>只提到角色或作品、没谈到这个点的网页（28）</summary><div class="src"><a href="https://kashinavi.com/lyrics/170896/" target="_blank" rel="noopener">FATEAKi 歌詞</a> <span class="meta" style="display:inline">kashinavi.com</span></div><div class="src"><a href="https://pt.qq.com/read/1057431464/7" target="_blank" rel="noopener">妄想成真:我的中二病能修仙</a> <span class="meta" style="display:inline">腾讯网</span></div><div class="src"><a href="https://angelwing3920.pixnet.net/blog/posts/1006232476" target="_blank" rel="noopener">Fate篇,第15日(四)  三宅一身  電玩動漫分享  痞客邦  PIXNET</a> <span class="meta" style="display:inline">angelwing3920.pixnet.net</span></div><div class="src"><a href="https://forums.spacebattles.com/threads/thaumaturgy-for-dummies-questions-and-answers-for-the-nasuverse.378637/page-7" target="_blank" rel="noopener">Thaumaturgy For Dummies: Questions and Answers for the Nasuverse.</a> <span class="meta" style="display:inline">forums.spacebattles.com</span></div><div class="src"><a href="https://www.ficool.com/story/35474626508527505/95254225864415218" target="_blank" rel="noopener">Chapter 9 - Projection Magecraft</a> <span class="meta" style="display:inline">www.ficool.com</span></div><div class="src"><a href="https://jujutsu-kaisen.fandom.com/wiki/Projection_Sorcery?diff=70449&amp;oldid=32271" target="_blank" rel="noopener">Projection Sorcery</a> <span class="meta" style="display:inline">jujutsu-kaisen.fandom.com</span></div><div class="src"><a href="https://www.ohshinakai.com/the-faerie-thread-the-magick-of-suggestion" target="_blank" rel="noopener">The Faerie Thread: The Magick of Suggestion</a> <span class="meta" style="display:inline">www.ohshinakai.com</span></div><div class="src"><a href="https://m.fgo.wiki/w/%E4%BB%8E%E8%80%85459" target="_blank" rel="noopener">所罗门(Pretender)</a> <span class="meta" style="display:inline">m.fgo.wiki</span></div><div class="src"><a href="https://bw.hamstro.dev/vsbattles/wiki/Fran%C3%A7ois_Prelati_(Fate)" target="_blank" rel="noopener">François Prelati (Fate)</a> <span class="meta" style="display:inline">bw.hamstro.dev</span></div><div class="src"><a href="https://forum.cvcv.net/thread-39124-13-1.html" target="_blank" rel="noopener">Fate/Stay Night</a> <span class="meta" style="display:inline">forum.cvcv.net</span></div><div class="src"><a href="https://bbs.cvcv.net/thread-39124-8-1.html" target="_blank" rel="noopener">Fate/Stay Night</a> <span class="meta" style="display:inline">bbs.cvcv.net</span></div><div class="src"><a href="https://forum.cvcv.net/thread-39124-11-3.html" target="_blank" rel="noopener">Fate/Stay Night</a> <span class="meta" style="display:inline">forum.cvcv.net</span></div><div class="src"><a href="https://lparchive.org/Fatestay-night/Update%2084/" target="_blank" rel="noopener">Fate/stay night Part #84</a> <span class="meta" style="display:inline">lparchive.org</span></div><div class="src"><a href="http://moegirl.org.cn/%E5%B4%94%E6%96%AF%E5%9D%A6(Fate)" target="_blank" rel="noopener">崔斯坦(Fate)</a> <span class="meta" style="display:inline">萌娘百科</span></div><div class="src"><a href="https://moegirl.org.cn/%E9%AD%94%E6%B3%95%E7%BA%A2%E5%AE%9D%E7%9F%B3" target="_blank" rel="noopener">魔法红宝石</a> <span class="meta" style="display:inline">萌娘百科</span></div><div class="src"><a href="http://moegirl.org.cn/%E7%89%B9%E5%BC%82%E7%82%B9(Fate)" target="_blank" rel="noopener">特异点(Fate)</a> <span class="meta" style="display:inline">萌娘百科</span></div><div class="src"><a href="http://moegirl.org.cn/%E6%97%85%E8%A1%8C%E8%80%85(Fate)" target="_blank" rel="noopener">span class"mw-page-title-main"旅行者(Fate)/span</a> <span class="meta" style="display:inline">萌娘百科</span></div><div class="src"><a href="https://bgm.tv/game/list/935229" target="_blank" rel="noopener">一般路过铁奥的游戏</a> <span class="meta" style="display:inline">Bangumi 番组计划</span></div><div class="src"><a href="https://bgm.tv/person/2716/collabs" target="_blank" rel="noopener">与｢山崎展義｣合作的人物</a> <span class="meta" style="display:inline">Bangumi 番组计划</span></div><div class="src"><a href="https://bgm.tv/group/topic/435170" target="_blank" rel="noopener">fate具体如何入坑?</a> <span class="meta" style="display:inline">Bangumi 番组计划</span></div><div class="src"><a href="https://bgm.tv/blog/299195" target="_blank" rel="noopener">《魔法使之夜》 一部ACG爱好者不容错过的视觉小说</a> <span class="meta" style="display:inline">Bangumi 番组计划</span></div><div class="src"><a href="https://bgm.tv/blog/367938" target="_blank" rel="noopener">动画观看顺序</a> <span class="meta" style="display:inline">Bangumi 番组计划</span></div><div class="src"><a href="https://bgm.tv/blog/371058" target="_blank" rel="noopener">“热闹有余､内核不足”,不过依然是近年fate动画中最好看的一部</a> <span class="meta" style="display:inline">Bangumi 番组计划</span></div><div class="src"><a href="https://bgm.tv/subject/77552/persons?group=position" target="_blank" rel="noopener">Fate/ゼﾛｶﾌｪ</a> <span class="meta" style="display:inline">Bangumi 番组计划</span></div><div class="src"><a href="https://bgm.tv/person/13310/collabs" target="_blank" rel="noopener">首藤武夫</a> <span class="meta" style="display:inline">Bangumi 番组计划</span></div><div class="src"><a href="https://fgo.wiki/w/死想显现界域 Traum" target="_blank" rel="noopener">死想显现界域 Traum</a> <span class="meta" style="display:inline">fgo.wiki</span></div><div class="src"><a href="http://fgo.wiki/w/%E4%BB%8E%E8%80%85335" target="_blank" rel="noopener">赫费斯提翁 - Mooncell - 玩家共同构筑的FGO中文Wiki</a> <span class="meta" style="display:inline">fgo.wiki</span></div><div class="src"><a href="https://fgo.wiki/w/TV%E5%8A%A8%E7%94%BB%E3%80%8CFate/strange_Fake%E3%80%8D%E6%92%AD%E6%94%BE%E7%BA%AA%E5%BF%B5%E6%B4%BB%E5%8A%A8" target="_blank" rel="noopener">TV动画｢Fate/strange Fake｣播放纪念活动</a> <span class="meta" style="display:inline">fgo.wiki</span></div></details>
+    <details style="margin-top:10px"><summary>完整报告（Markdown，含 ClaimReview 标准格式）</summary><pre># 查证报告：Trace on 是投影魔术的正规魔术师咒文
+
+- 时间：2026/10/24 18:05:19
+- 领域：二次元原作
+- 相关：Fate
+- 要核实：“Trace on 是投影魔术的正规魔术师咒文”这一说法是否属实，还是仅为卫宫士郎/Archer的个人咏唱习惯而非正规魔术师的通用咒文
+
+## 结论：查不到
+现有摘录只能证明「Trace on」是卫宫士郎的投影咏唱语[3]，以及士郎的投影属特例[9]，但没有任何一条摘录说明它是否为正规魔术师的通用咒文，因此无法判定该说法真假。
+
+&gt; 缺官方设定集或原作正文对正规投影咒文的直接说明。
+
+## 证据（模型引用的原句，已逐字核对；编号对应文末来源列表）
+- [3]【相关】「“ 投影,开始 ( Trace on ) ”」 —— [www.moegirl.org](http://www.moegirl.org/%E5%8D%AB%E5%AE%AB%E5%A3%AB%E9%83%8E)
+- [9]【相关】「卫宫士郎的投影属于特例」 —— [百度百科](https://baike.baidu.com/item/%E6%8A%95%E5%BD%B1%E9%AD%94%E6%9C%AF)
+- [9]【相关】「事实上卫宫士郎的投影其实并非投影魔术,而是无限剑制的副产物」 —— [百度百科](https://baike.baidu.com/item/%E6%8A%95%E5%BD%B1%E9%AD%94%E6%9C%AF)
+
+## 论证图
+```mermaid
+flowchart TB
+C["说法：Trace on 是投影魔术的正&lt;br/&gt;规魔术师咒文"]
+V{{"结论：查不到"}}
+S3(["[3] www.moegirl.or&lt;br/&gt;百科"])
+class S3 src
+E0["「“ 投影,开始 Trace &lt;br/&gt;on ”」"]
+S3 --&gt; E0
+E0 --&gt;|相关| C
+class E0 rel
+S9(["[9] 百度百科&lt;br/&gt;百科"])
+class S9 src
+E1["「卫宫士郎的投影属于特例」"]
+S9 --&gt; E1
+E1 --&gt;|相关| C
+class E1 rel
+E2["「事实上卫宫士郎的投影其实并非&lt;br/&gt;投影魔术,而是无限剑制的副产&lt;br/&gt;物」"]
+S9 --&gt; E2
+E2 --&gt;|相关| C
+class E2 rel
+C --&gt;|"依据：摘录只涉及士郎个人咏唱与其&lt;br/&gt;投影的特例性，未提及正规魔术师通&lt;br/&gt;用咒文，故无法证实或证"| V
+class V none
+classDef sup stroke:#1f7a4d,stroke-width:2px
+classDef reb stroke:#c2410c,stroke-width:2px
+classDef rel stroke:#8a94a6,stroke-dasharray:4 3
+classDef src fill:#ffffff,stroke:#8a94a6
+classDef found stroke:#1f7a4d,stroke-width:3px
+classDef part stroke:#b7791f,stroke-width:3px
+classDef twist stroke:#c2410c,stroke-width:3px
+classDef split stroke:#6d28d9,stroke-width:3px
+classDef none stroke:#6b7280,stroke-width:3px
+```
+
+## 调查步骤
+- 细节词：投影、Trace on、詠唱、咒文、魔术师、卫宫士郎、Archer、正规
+- 元宝搜索「Fate 投影魔术 Trace on 咏唱 咒文」：20 条
+- 元宝搜索「卫宫士郎 投影 Trace on 咏唱 原文」：20 条
+- 元宝搜索「Trace on 投影 魔术师 误传 二设」：20 条
+- 元宝搜索「Fate 投影魔术 咏唱 咒文 正规魔术师」：20 条
+- 元宝搜索「Fate Trace on 是投影魔术的正规魔术师咒文」：20 条
+- 元宝搜索「Fate 投影魔术 Trace on」（站内：moegirl.org.cn）：10 条
+- 元宝搜索「Fate 投影魔术 Trace on」（站内：bgm.tv）：10 条
+- 元宝搜索「Fate 投影魔术 Trace on」（站内：fgo.wiki）：10 条
+- 共 104 个网页，69 个提到细节
+
+## 提到细节的全部来源
+1. [卫宫士郎(《Fate/stay night》中的男主角)](https://baike.sogou.com/v154970363.htm) · 百科 · 搜狗百科
+2. [卫宫士郎 - 《Fate/普Stay night》中人物 免费编辑 修改义项名](https://upimg.baike.haosou.com/doc/6093823.html) · 百科 · upimg.baike.haosou.com
+3. [卫宫士郎 - 萌娘百科 万物皆可萌的百科全书](http://www.moegirl.org/%E5%8D%AB%E5%AE%AB%E5%A3%AB%E9%83%8E) · 百科 · www.moegirl.org
+4. [卫宫士郎](https://wapbaike.baidu.com/view/176581.htm) · 百科 · 百度百科
+5. [卫宫士郎](https://baike.baidu.com/item/%e5%8d%ab%e5%ae%ab%e5%a3%ab%e9%83%8e/3191065) · 百科 · 百度百科
+6. [言峰绮礼(《Fate/stay night》中角色)](https://baike.sogou.com/v1236116.htm) · 百科 · 搜狗百科
+7. [无限剑制](https://m.baike.haosou.com/doc/5414293-5652435.html) · 百科 · m.baike.haosou.com
+8. [美狄亚(Fate) - 萌娘百科 万物皆可萌的百科全书](http://moegirl.org.cn/C%E5%A6%88) · 百科 · 萌娘百科
+9. [投影魔术](https://baike.baidu.com/item/%E6%8A%95%E5%BD%B1%E9%AD%94%E6%9C%AF) · 百科 · 百度百科
+10. [卫宫士郎](https://baike.baidu.com/item/%E5%8D%AB%E5%AE%AB%E5%A3%AB%E9%83%8E/16033747) · 百科 · 百度百科
+11. [卫宫士郎](https://baike.baidu.com/item/Emiya) · 百科 · 百度百科
+12. [卫宫士郎](https://baike.baidu.com/item/%E5%8D%AB%E5%AE%AB%E5%A3%AB%E9%83%8E/3191065) · 百科 · 百度百科
+13. [卫宫士郎](https://baike.baidu.com/item/%E5%8D%AB%E5%AE%AB/22267019) · 百科 · 百度百科
+14. [span class"mw-page-title-main"远坂凛/span](http://moegirl.org.cn/%E8%BF%9C%E5%9D%82%E5%87%9B) · 百科 · 萌娘百科
+
+## ClaimReview（schema.org 事实核查标准格式）
+```json
+{
+ "@context": "https://schema.org",
+ "@type": "ClaimReview",
+ "datePublished": "2026-10-24",
+ "claimReviewed": "Trace on 是投影魔术的正规魔术师咒文",
+ "author": {
+  "@type": "Organization",
+  "name": "元宝考据侦探"
+ },
+ "reviewRating": {
+  "@type": "Rating",
+  "alternateName": "查不到"
+ },
+ "itemReviewed": {
+  "@type": "Claim",
+  "appearance": [
+   {
+    "@type": "CreativeWork",
+    "url": "http://www.moegirl.org/%E5%8D%AB%E5%AE%AB%E5%A3%AB%E9%83%8E"
+   },
+   {
+    "@type": "CreativeWork",
+    "url": "https://baike.baidu.com/item/%E6%8A%95%E5%BD%B1%E9%AD%94%E6%9C%AF"
+   },
+   {
+    "@type": "CreativeWork",
+    "url": "https://baike.baidu.com/item/%E6%8A%95%E5%BD%B1%E9%AD%94%E6%9C%AF"
+   }
+  ]
+ }
+}
+```</pre></details>
+    
+    <div class="status">查证时间：2026/10/24 18:05:19</div></section></article></div>
+<footer>搜索：腾讯元宝搜索 API。判断：DeepSeek，只读搜索摘录、必须逐字引用。评级参照 schema.org ClaimReview 事实核查格式；论证图按 Toulmin 论证模型绘制。</footer>
+</div>

@@ -1,0 +1,1188 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>原作考据侦探</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#f6f7f9; --sheet:#ffffff; --ink:#1b2a41; --ink2:#4a5568; --mute:#8a94a6; --rule:#e3e7ee;
+  --r-found:#1f7a4d; --r-part:#b7791f; --r-twist:#c2410c; --r-split:#6d28d9; --r-none:#6b7280;
+  --t-off:#1f7a4d; --t-wiki:#2b6cb0; --t-media:#4a5568; --t-comm:#b7791f; --t-farm:#c53030;
+  --serif:"Noto Serif SC","Songti SC",serif; --sans:"Noto Sans SC","Microsoft YaHei",system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root{--paper:#11161f;--sheet:#18202c;--ink:#e6ebf2;--ink2:#b4bfcd;--mute:#7d8899;--rule:#2a3442;
+    --r-found:#4ade80;--r-part:#fbbf24;--r-twist:#fb923c;--r-split:#a78bfa;--r-none:#9ca3af;
+    --t-off:#4ade80;--t-wiki:#7cb3ec;--t-media:#b4bfcd;--t-comm:#fbbf24;--t-farm:#f87171;}
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font:15px/1.7 var(--sans)}
+.wrap{max-width:920px;margin:0 auto;padding:32px 16px 96px}
+header h1{font:700 28px/1.3 var(--serif);margin:0 0 6px}
+header p{margin:0;color:var(--ink2);max-width:60ch}
+.box{background:var(--sheet);border:1px solid var(--rule);border-radius:10px;padding:20px;margin-top:20px}
+label{font-size:13px;color:var(--ink2)}
+textarea,input{width:100%;font:inherit;color:inherit;background:transparent;border:1px solid var(--rule);border-radius:6px;padding:10px 12px;margin:4px 0 12px}
+textarea{min-height:68px;resize:vertical}
+textarea:focus,input:focus,button:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid var(--t-wiki);outline-offset:2px}
+.row{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap}
+.row>div{flex:1;min-width:200px}
+button.main{font:inherit;font-weight:500;border:0;border-radius:6px;padding:10px 24px;background:var(--ink);color:var(--sheet);cursor:pointer;white-space:nowrap}
+button.main:disabled{opacity:.5;cursor:wait}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{font:inherit;font-size:13px;border:1px solid var(--rule);border-radius:99px;padding:2px 12px;cursor:pointer;color:var(--ink2);background:transparent}
+.chip:hover{border-color:var(--ink);color:var(--ink)}
+.status{font-size:12px;color:var(--mute);margin-top:12px}
+.log{font-size:13px;color:var(--ink2);margin-top:10px;white-space:pre-line;border-left:2px solid var(--rule);padding-left:12px}
+.log:empty{display:none}
+
+/* ===== 报告 ===== */
+.case{background:var(--sheet);border:1px solid var(--rule);border-radius:10px;margin-top:20px;overflow:hidden}
+.case-head{display:grid;grid-template-columns:1fr auto;gap:20px;padding:24px;border-bottom:1px solid var(--rule)}
+.case-kind{font-size:13px;color:var(--mute)}
+.case-claim{font:700 22px/1.5 var(--serif);margin:4px 0 12px}
+.case-sum{margin:0;font-size:16px;max-width:62ch}
+.tfu sup a,.case-sum sup a{font-size:11px;color:var(--t-wiki);text-decoration:none;padding:0 1px}
+.stamp{align-self:start;border:3px solid currentColor;border-radius:8px;padding:10px 16px;text-align:center;transform:rotate(-4deg);min-width:118px}
+.stamp b{display:block;font:700 22px/1.2 var(--serif)}
+.stamp span{font-size:12px}
+.v-found{color:var(--r-found)} .v-part{color:var(--r-part)} .v-twist{color:var(--r-twist)} .v-split{color:var(--r-split)} .v-none{color:var(--r-none)}
+.scale{display:flex;gap:4px;margin-top:10px}
+.scale i{flex:1;height:5px;border-radius:2px;background:var(--rule)}
+.scale i.on{background:currentColor}
+.sec{padding:20px 24px;border-bottom:1px solid var(--rule)}
+.sec:last-child{border-bottom:0}
+.sec h3{font:700 17px/1.4 var(--serif);margin:0 0 4px}
+.sec .hint{font-size:13px;color:var(--mute);margin:0 0 12px}
+.tfu{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.tfu>div{border-top:4px solid currentColor;padding-top:8px}
+.tfu h4{margin:0 0 6px;font-size:14px}
+.tfu ul{margin:0;padding-left:18px;color:var(--ink)}
+.tfu li{margin-bottom:4px}
+.tfu .empty{color:var(--mute);font-size:13px}
+.c-true{color:var(--r-found)} .c-false{color:var(--r-twist)} .c-unk{color:var(--r-none)}
+.map{overflow-x:auto;background:var(--paper);border-radius:8px;padding:12px;min-height:80px}
+.map svg{max-width:100%;height:auto}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{text-align:left;font-weight:500;color:var(--mute);font-size:12px;border-bottom:1px solid var(--rule);padding:6px 8px}
+td{border-bottom:1px solid var(--rule);padding:10px 8px;vertical-align:top}
+td.q{font-family:var(--serif);min-width:220px}
+.tag{display:inline-block;font-size:12px;line-height:18px;padding:0 7px;border-radius:4px;border:1px solid currentColor;white-space:nowrap}
+.st-支持{color:var(--r-found)} .st-反驳{color:var(--r-twist)} .st-相关{color:var(--r-none)}
+.t-官方{color:var(--t-off)} .t-百科{color:var(--t-wiki)} .t-媒体{color:var(--t-media)} .t-社区{color:var(--t-comm)} .t-问答农场{color:var(--t-farm)} .t-其他{color:var(--mute)}
+.ok{color:var(--r-found);font-size:12px} .bad{color:var(--t-farm);font-size:12px}
+td a,.src a{color:var(--ink);text-decoration:underline;text-decoration-color:var(--rule);text-underline-offset:3px}
+.mix{display:flex;height:12px;border-radius:3px;overflow:hidden;margin:6px 0 8px}
+.mix i{display:block;height:100%}
+.legend{display:flex;flex-wrap:wrap;gap:12px;font-size:13px;color:var(--ink2)}
+.legend b{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px;vertical-align:middle}
+.gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.gallery figure{margin:0;cursor:zoom-in}
+.gallery img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:6px;background:var(--paper);display:block}
+.gallery figcaption{font-size:12px;color:var(--ink2);margin-top:4px;line-height:1.4}
+.videos{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
+.videos iframe{width:100%;aspect-ratio:16/9;border:0;border-radius:6px;background:#000}
+.videos p{margin:4px 0 0;font-size:13px}
+dialog{border:0;padding:0;background:transparent;max-width:92vw}
+dialog img{max-width:92vw;max-height:84vh;display:block;border-radius:6px}
+dialog::backdrop{background:rgba(0,0,0,.75)}
+.timeline{list-style:none;margin:0;padding:0;border-left:2px solid var(--rule)}
+.timeline li{padding:0 0 10px 14px;position:relative;font-size:14px}
+.timeline li::before{content:"";position:absolute;left:-6px;top:8px;width:10px;height:10px;border-radius:50%;background:var(--sheet);border:2px solid var(--ink2)}
+.src{padding:10px 0;border-top:1px solid var(--rule)}
+.src p{margin:4px 0 0;font-size:14px;color:var(--ink2)}
+.src.low{opacity:.55}
+details summary{cursor:pointer;color:var(--ink2);font-size:14px}
+pre{white-space:pre-wrap;font-size:12px;color:var(--ink2)}
+/* 旧版规则模式用的样式 */
+.verdict{border-left:5px solid var(--mute);padding:4px 0 4px 14px} .verdict h2{margin:0;font:700 20px var(--serif)}
+.note{margin-top:10px;font-size:14px;background:var(--paper);padding:10px 12px;border-radius:6px}
+.ev{border-top:1px solid var(--rule);padding:12px 0} .ev p{margin:0;font-size:14px;color:var(--ink2)}
+.meta{font-size:12px;color:var(--mute);display:flex;gap:10px;flex-wrap:wrap}
+.steps{display:flex;flex-wrap:wrap;gap:8px;padding:0;list-style:none} .steps li{font-size:13px;border:1px solid var(--rule);border-radius:6px;padding:2px 10px}
+mark{background:rgba(214,170,60,.35);color:inherit}
+@media (max-width:640px){
+  .case-head{grid-template-columns:1fr} .stamp{justify-self:start}
+  .tfu{grid-template-columns:1fr}
+  td.q{min-width:0}
+  table{font-size:13px} td,th{padding:8px 4px}
+  td:first-child,th:first-child{display:none}
+}
+td:last-child,th:last-child,td:nth-child(3){white-space:nowrap}
+@media (prefers-reduced-motion:no-preference){
+  .stamp{animation:stamp .35s ease-out}
+  @keyframes stamp{from{transform:rotate(-4deg) scale(1.6);opacity:0}to{transform:rotate(-4deg) scale(1);opacity:1}}
+}
+.tabs{display:flex;gap:4px;margin-bottom:14px;border-bottom:1px solid var(--rule)}
+.tabs button{font:inherit;font-size:14px;background:none;border:0;border-bottom:3px solid transparent;padding:6px 14px;color:var(--ink2);cursor:pointer;margin-bottom:-1px}
+.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--ink);font-weight:500}
+.progress{background:var(--sheet);border:1px solid var(--rule);border-radius:10px;margin-top:20px;padding:24px;position:relative}
+.progress h3{font:700 17px/1.4 var(--serif);margin:0 0 14px}
+.pbar{height:6px;background:var(--rule);border-radius:3px;overflow:hidden;margin-bottom:18px}
+.pbar i{display:block;height:100%;width:4%;background:var(--ink);border-radius:3px;transition:width .5s ease}
+.psteps{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.psteps li{display:grid;grid-template-columns:26px 1fr auto;gap:10px;align-items:start;color:var(--mute)}
+.psteps li .dot{width:22px;height:22px;border-radius:50%;border:2px solid var(--rule);display:grid;place-items:center;font-size:12px}
+.psteps li.on{color:var(--ink)} .psteps li.on .dot{border-color:var(--ink);border-top-color:transparent;animation:spin 1s linear infinite}
+.psteps li.done{color:var(--ink2)} .psteps li.done .dot{border-color:var(--r-found);background:var(--r-found);color:var(--sheet)}
+.psteps li small{display:block;font-size:12px;color:var(--mute);white-space:pre-line}
+.psteps time{font-size:12px;color:var(--mute);font-variant-numeric:tabular-nums}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.psteps li.on .dot{animation:none;border-top-color:var(--ink)}}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+.actions button{font:inherit;font-size:13px;border:1px solid var(--ink);background:var(--sheet);color:var(--ink);border-radius:6px;padding:5px 14px;cursor:pointer}
+.case-sum.big{font-size:17px;line-height:1.75}
+.sec.clue{background:var(--paper)}
+.sec.clue ul{margin:0 0 10px;padding-left:20px}
+.sec.clue textarea{background:var(--sheet)}
+td.n a{font-variant-numeric:tabular-nums;text-decoration:none;color:var(--t-wiki)}
+footer{margin-top:40px;font-size:12px;color:var(--mute)}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <nav class="tabs" id="tabs" aria-label="查证领域"></nav>
+    <h1 id="ptitle">原作考据侦探</h1>
+    <p id="pintro"></p>
+  </header>
+
+  <div class="box">
+    <label>要查证的说法或问题</label>
+    <textarea id="claim" placeholder="例：悟空第一次变超级赛亚人是在漫画第几话？"></textarea>
+    <div class="row">
+      <div>
+        <label id="worklabel">作品（可选，能提高准确度）</label>
+        <input id="work" list="works">
+        <datalist id="works"></datalist>
+      </div>
+      <div style="flex:0"><button class="main" id="go">开始查证</button></div>
+    </div>
+    <div class="chips" id="examples"></div>
+    <div class="status" id="status">正在连接本地服务……</div>
+  </div>
+
+  <div id="result"></div>
+  <footer>搜索由元宝搜索提供。结论只根据搜到的公开网页做出，请点开来源核对原文。</footer>
+</div>
+
+<script id="engine">
+/* ================= 查证引擎（纯前端，服务端只负责转发搜索） ================= */
+const ENGINE = (() => {
+  const TIER_RULES = [
+    ["官方", /typemoon\.(com|jp)|fate-go\.jp|fgo\.bilibiligame|aniplex|shueisha|jujutsukaisen\.jp|dragon-ball-official|toei-anim|kadokawa|bandainamco|bilibili\.com\/blackboard/],
+    ["社区", /forum|bbs\.|spacebattles|sufficientvelocity|reddit\.com|vsbattles|comic-vs-anime|vs-battle|deathbattle|tieba\.baidu|nga\.cn/i],
+    ["百科", /moegirl\.org|baike\.baidu|baike\.sogou|baike\.so\.com|baike\.haosou|baike\.com|fandom\.com|wikipedia\.org|fgo\.wiki|wiki\.biligame|huijiwiki|bangumi\.tv|bgm\.tv|wikiwiki\.jp|atwiki/],
+    ["问答农场", /zhidao|wenda|\/ask\/|\/Ask\/|yidianzhidao|it224|xunmei365|lygyc|acgnla|fragtop|coboak|fmyly|hiwaifu|grokipedia|chatbox|jingyan|wukong|iask|sogou\.com\/wenwen|zybang|ixiaowai|zhuanlan\.sohu/i],
+    ["社区", /bilibili\.com|zhihu\.com|tieba\.baidu|nga\.cn|ngabbs|lofter|weibo\.(com|cn)|douban\.com|xiaohongshu|taptap|toutiao\.com|douyin|ixigua|hupu/],
+    ["媒体", /\.gov\.cn|\.edu\.cn|gmw\.cn|cssn\.cn|news|qq\.com\/rain|new\.qq\.com|sohu\.com|163\.com|sina\.com|ifeng|thepaper|cctv|xinhua|news\.cn|abema|gamersky|17173|3dm|ali213|youxiputao|chinadaily|people\.com/],
+  ];
+  const TIER_WEIGHT = {"官方":1, "百科":0.85, "媒体":0.55, "社区":0.45, "其他":0.35, "问答农场":0.1};
+
+  function tierOf(url, site){
+    const u = url || "";
+    for (const [name, re] of TIER_RULES) if (re.test(u)) return name;
+    if (/知道|问答|问问|经验|悟空问答/.test(site || "")) return "问答农场";
+    if (/百科|wiki/i.test(site || "")) return "百科";
+    return "其他";
+  }
+  function host(url){ try { return new URL(url).hostname.replace(/^www\.|^m\.|^wap/,""); } catch(e){ return ""; } }
+  function rootDomain(url){ const h = host(url).split("."); return h.slice(-2).join("."); }
+
+  const STOP = new Set("的了是在和与及或吗呢吧啊么就都也还又被把给对说过有没不这那哪个一些里中上下第几什么怎么为何是否请问".split(""));
+  function clean(t){ return (t||"").replace(/[\s，。、！？,.!?：:；;“”"'《》<>（）()\[\]【】·\-—_~～]/g,""); }
+  function grams(t){
+    const s = [...clean(t)].filter(c => !STOP.has(c)).join("");
+    const g = new Set(); for (let i=0;i<s.length-1;i++) g.add(s.slice(i,i+2));
+    (t||"").replace(/[A-Za-z0-9]{2,}/g, w => g.add(w.toLowerCase()));
+    return g;
+  }
+  function coverage(claim, text){
+    const cg = grams(claim); if (!cg.size) return 0;
+    const low = (text||"").toLowerCase(); const ct = clean(low);
+    let hit = 0; cg.forEach(g => { if (ct.includes(g)) hit++; });
+    return hit / cg.size;
+  }
+
+  /* —— 数字类说法抽取：第X集 / 第X话 / X卷 / X年 —— */
+  const CN = {"零":0,"一":1,"二":2,"两":2,"三":3,"四":4,"五":5,"六":6,"七":7,"八":8,"九":9,"十":10,"百":100};
+  function cn2num(s){
+    if (/^\d+$/.test(s)) return +s;
+    let total=0, cur=0;
+    for (const ch of s){ const v = CN[ch]; if (v===undefined) return NaN;
+      if (v===10||v===100){ total += (cur||1)*v; cur=0; } else cur = v; }
+    return total + cur;
+  }
+  const UNIT_KIND = {"集":"动画集数","话":"漫画话数","話":"漫画话数","回":"漫画话数","章":"章节","卷":"单行本卷数","季":"季数","期":"期数"};
+  function extractFacts(text){
+    const out = [];
+    const re = /(?:第\s*([0-9]{1,4}|[零一二两三四五六七八九十百]{1,6})\s*(集|话|話|回|章|卷|季|期))|(?:(?:是|在|于|为)\s*([0-9]{1,4})\s*(话|話|集))/g;
+    let m; while ((m = re.exec(text))){
+      const numStr = m[1] || m[3], unit = m[2] || m[4];
+      const n = cn2num(numStr); if (isNaN(n) || n<=0) continue;
+      let kind = UNIT_KIND[unit];
+      const around = text.slice(Math.max(0,m.index-25), m.index+15);
+      if (kind==="漫画话数" && /动画|動畫|アニメ|TV|播出|播放/.test(around) && !/漫画|漫畫|连载|單行本|单行本/.test(around)) kind = "动画集数";
+      out.push({kind, n, raw: m[0], at: m.index});
+    }
+    return out;
+  }
+  function askedKind(claim){
+    if (/第几话|几话|漫画/.test(claim)) return "漫画话数";
+    if (/第几集|几集|动画|TV/.test(claim)) return "动画集数";
+    if (/第几卷|几卷/.test(claim)) return "单行本卷数";
+    return null;
+  }
+  // 每个来源每种类型只取一个数字。关键词按“稀有度”加权：人名作品名到处都有，
+  // 真正决定是不是在说这件事的是“第一次/变成/超级赛亚人”这类词。
+  function factsNearClaim(claim, text, weight){
+    const g = [...grams(claim)]; if (!g.length) return [];
+    const total = g.reduce((s,x) => s + (weight[x] ?? 1), 0);
+    const best = {};
+    extractFacts(text).forEach(f => {
+      const win = clean(text.slice(Math.max(0,f.at-20), f.at+40));
+      const s = g.filter(x => win.includes(x)).reduce((a,x) => a + (weight[x] ?? 1), 0) / total;
+      const listy = (text.slice(f.at, f.at+30).match(/第/g)||[]).length > 2 ? 0.6 : 1;
+      const score = s * listy;
+      if (score >= 0.2 && (!best[f.kind] || score > best[f.kind].score)) best[f.kind] = {...f, score:+score.toFixed(2)};
+    });
+    return Object.values(best);
+  }
+  // 同一个站的镜像（moegirl.org / moegirl.tw / mzh.moegirl…）算作一个来源
+  function family(url){
+    const parts = host(url).split(".").filter(x => !/^(www|m|mzh|zh|wap|mip|upimg|wiki\d*)$/.test(x));
+    const tlds = /^(com|cn|org|net|tw|hk|uk|jp|io|tv|co|wiki)$/;
+    const core = parts.filter(x => !tlds.test(x));
+    if (/baike|zhidao|tieba|jingyan/.test(host(url))) return host(url).replace(/^(www|m|wap|wapbaike)\./,"");
+    return core[core.length-1] || host(url);
+  }
+
+  function plan(claim, work){
+    const base = work && !claim.includes(work) ? `${work} ${claim}` : claim;
+    const core = base.replace(/[？?吗呢吧]+$/,"").replace(/是不是|是否|请问|到底/g,"");
+    const angles = [
+      {label:"全网", body:{Query: core, Mode:0, Cnt:20}},
+      {label:"百科向", body:{Query: core + " 百科 设定", Mode:0, Cnt:10}},
+      {label:"原作出处向", body:{Query: core + " 原作 出处 漫画 原文", Mode:0, Cnt:10}},
+      {label:"萌娘百科", body:{Query: core, Site:"moegirl.org.cn", Mode:0, Cnt:10}},
+    ];
+    if (/fate|fgo|型月|月姬|空之境界/i.test(base))
+      angles.push({label:"Mooncell", body:{Query: core, Site:"fgo.wiki", Mode:0, Cnt:10}});
+    return {query: core, angles};
+  }
+
+  function analyze(claim, work, runs){
+    const items = new Map();
+    // 关键词稀有度：在多少比例的结果里出现过
+    const allTexts = runs.flatMap(r => (r.pages||[]).map(p => clean([p.title, p.content||p.passage].join(" "))));
+    const weight = {};
+    grams(claim).forEach(g => {
+      const df = allTexts.filter(t => t.includes(g)).length / Math.max(allTexts.length,1);
+      weight[g] = +(1.3 - df*0.8).toFixed(2);   // 人人都提的词权重低，少见的词权重高
+    });
+    for (const run of runs){
+      (run.pages||[]).forEach(p => {
+        if (!p.url) return;
+        const k = p.url.replace(/[?#].*$/,"").replace(/^https?:\/\/(www\.|m\.|wap)?/,"");
+        const text = [p.title, p.content || p.passage].join(" ");
+        let it = items.get(k);
+        if (!it){
+          const tier = tierOf(p.url, p.site);
+          it = {title:p.title||"", url:p.url, site:p.site||host(p.url), date:(p.date||"").slice(0,10),
+                passage:(p.content||p.passage||"").slice(0,420), score:+p.score||0, tier,
+                coverage: +coverage(claim + " " + (work||""), text).toFixed(2), found_by:[], family: family(p.url), facts: factsNearClaim(claim, text, weight)};
+          items.set(k, it);
+        }
+        if (!it.found_by.includes(run.label)) it.found_by.push(run.label);
+      });
+    }
+    const list = [...items.values()];
+    list.forEach(it => {
+      it.rank = +(it.coverage*0.55 + TIER_WEIGHT[it.tier]*0.3 + Math.min(it.found_by.length,3)*0.05).toFixed(3);
+    });
+    list.sort((a,b) => b.rank - a.rank);
+    const relevant = list.filter(it => it.coverage >= 0.4);
+
+    // —— 数字矛盾检测 ——
+    const asked = askedKind(claim);
+    const byKind = {};
+    relevant.forEach(it => it.facts.forEach(f => {
+      (byKind[f.kind] ||= {})[f.n] ||= [];
+      const arr = byKind[f.kind][f.n];
+      if (!arr.find(x => x.family === it.family)) arr.push({url:it.url, site:it.site, tier:it.tier, title:it.title, family:it.family});
+    }));
+    const conflicts = Object.entries(byKind).map(([kind, vals]) => ({
+      kind, values: Object.entries(vals).map(([n, srcs]) => ({n:+n, srcs})).sort((a,b)=>b.srcs.length-a.srcs.length)
+    }));
+
+    // —— 结论 ——
+    const strongRef = relevant.filter(it => (it.tier==="百科"||it.tier==="官方") && it.coverage>=0.5);
+    const strongAny = relevant.filter(it => it.tier!=="问答农场" && it.coverage>=0.5);
+    const farmOnly = relevant.length && relevant.every(it => it.tier==="问答农场");
+    const domains = new Set(strongAny.map(it => it.family));
+    const notes = [];
+    let verdict;
+
+    if (asked){
+      const hit = conflicts.find(c => c.kind === asked);
+      const other = conflicts.filter(c => c.kind !== asked && c.values.length);
+      if (!hit){
+        verdict = {level:"none", label:`没查到${asked}`,
+          detail:`你问的是${asked}，但相关来源里没有一条给出${asked}。` + (other.length ? `搜到的只有${other.map(c=>c.kind).join("、")}，那是另一回事，不能拿来充数。` : "不确定就不编。")};
+      } else {
+        const credible = v => v.srcs.filter(s => s.tier!=="问答农场").length;
+        hit.values.sort((a,b) => (credible(b)*2 + b.srcs.length) - (credible(a)*2 + a.srcs.length));
+        const top = hit.values[0];
+        const solid = top.srcs.filter(s => s.tier!=="问答农场");
+        const rivals = hit.values.slice(1).filter(v => credible(v) >= 1 || v.srcs.length >= top.srcs.length);
+        if (rivals.length){
+          verdict = {level:"conflict", label:"说法有分歧",
+            detail:`关于${asked}，来源给出了 ${rivals.length+1} 种主要答案：${[top,...rivals].map(v=>`第${v.n}（${v.srcs.length} 个来源）`).join("、")}。下面列出谁说了什么。`};
+        } else if (solid.length >= 2 || (solid.length && solid.some(s=>s.tier==="百科"||s.tier==="官方"))){
+          verdict = {level:"found", label:`找到答案：第 ${top.n}`, detail:`${solid.length} 个可信来源一致给出这个${asked}。请点开核对。`};
+        } else {
+          verdict = {level:"community", label:`只有弱来源说是第 ${top.n}`, detail:`只有 ${top.srcs.length} 个来源（${top.srcs.map(s=>s.site+"·"+s.tier).join("、")}）这么说，没有百科或第二个独立来源印证，不能当定论。`};
+        }
+      }
+      if (other.length) notes.push(`顺带查到：${other.map(c => c.kind + " " + c.values.map(v=>`第${v.n}（${v.srcs.map(s=>s.site).join("、")}）`).join(" / ")).join("；")}。注意它们和你问的不是同一个东西。`);
+    } else {
+      if (strongRef.length && domains.size >= 2){
+        verdict = {level:"found", label:"找到资料出处", detail:`${strongRef.length} 条百科/官方来源与说法高度吻合，共 ${domains.size} 个不同网站相互印证。`};
+      } else if (strongRef.length){
+        verdict = {level:"found", label:"找到资料出处（单一来源）", detail:`只有 ${host(strongRef[0].url)} 一个站点的百科词条对得上，建议点开看原文措辞。`};
+      } else if (strongAny.length){
+        verdict = {level:"community", label:"只在社区里流传", detail:`有 ${strongAny.length} 条社区/媒体内容提到相近说法，但没找到百科或官方出处。可能是二设、玩梗或误传。`};
+      } else if (farmOnly){
+        verdict = {level:"none", label:"查不到可信来源", detail:"能对上的只有问答站和内容农场，这类页面常常是机器生成的，不采信。"};
+      } else {
+        verdict = {level:"none", label:"查不到", detail:"换了几个角度搜，没有找到能直接支持这个说法的公开来源。不确定就不说是真的。"};
+      }
+      const numConf = conflicts.filter(c => c.values.length > 1);
+      if (numConf.length && /第\s*[0-9零一二两三四五六七八九十百]/.test(claim)) notes.push(`来源之间有数字对不上：${numConf.map(c=>c.kind+"："+c.values.map(v=>"第"+v.n).join(" vs ")).join("；")}。`);
+    }
+    const farms = list.filter(it => it.tier==="问答农场" && it.coverage>=0.4).length;
+    if (farms) notes.push(`有 ${farms} 条结果来自问答站/内容农场（多为自动生成），已降权并标灰。`);
+
+    return {claim, work, verdict, notes, conflicts, asked, evidence: list.filter(it => it.coverage >= 0.25).slice(0, 18),
+            stats:{total:list.length, relevant:relevant.length, domains:domains.size}};
+  }
+
+  function toMarkdown(r){
+    const L = [`# 查证报告：${r.claim}`, "", `- 时间：${r.time}`, `- 领域：${r.profileName || ""}`, `- 相关：${r.work || "未指定"}`, `- 搜索词：${r.query}`, "",
+      `## 结论：${r.verdict.label}`, r.verdict.detail, ""];
+    r.notes.forEach(n => L.push(`> ${n}`, ""));
+    if (r.conflicts.length){
+      L.push("## 数字说法对照");
+      r.conflicts.forEach(c => c.values.forEach(v => L.push(`- ${c.kind} 第${v.n}：${v.srcs.map(s=>`[${s.site}](${s.url})`).join("、")}`)));
+      L.push("");
+    }
+    L.push("## 调查步骤");
+    r.steps.forEach(s => L.push(`- ${s.label}：${s.error ? "出错 " + s.error : s.count + " 条"}　\`${s.query}\`${s.site ? " @" + s.site : ""}`));
+    L.push("", "## 证据链");
+    r.evidence.forEach((e,i) => L.push(`${i+1}. [${e.title || e.url}](${e.url}) · ${e.tier} · ${e.site} · 吻合度 ${e.coverage} · ${e.date}`));
+    return L.join("\n");
+  }
+  return {plan, analyze, toMarkdown, tierOf};
+})();
+if (typeof module !== "undefined") module.exports = ENGINE;
+</script>
+
+
+<script id="profiles">
+/* ================= 领域配置：换一份配置，就是另一个领域的侦探 ================= */
+const PROFILES = {
+  acg: {
+    id:"acg", tab:"二次元原作", title:"原作考据侦探",
+    intro:"群里有人说“这是原作设定”？丢进来。它会换几个角度去搜、给来源分级、找出说法之间的矛盾，带着证据回来。查不到就说查不到。",
+    workLabel:"作品（可选，能提高准确度）", workPlaceholder:"例：Fate / FGO / 龙珠 / 火影忍者 / 咒术回战",
+    works:["Fate","FGO","龙珠","火影忍者","咒术回战"],
+    claimPlaceholder:"例：Archer 的狙击范围是 4 公里以内",
+    role:"二次元同人考据员",
+    planHint:`领域：动画、漫画、游戏、轻小说的原作设定。
+常见误传类型：把二设/同人设定当原作；把动画原创情节当漫画原作；版本混淆（TV/剧场版/重制版/手游）；数值偷换（把视力距离当射程）；角色混淆（同名不同角色、异闻带与泛人类史、不同世界线）。
+细节词要同时包含中文、日文原名和英文名；问到“第几话/第几集”时，把“漫画/动画”作为细节词之一。`,
+    judgeHint:`权威顺序：官方设定资料集与官网 > 原作正文引用 > 萌娘百科、Mooncell、Bangumi、百度百科 > 社区讨论 > 问答站。
+动画集数和漫画话数是两回事，必须区分；不同路线/版本的设定冲突，要写明各自出自哪个版本。`,
+    sources:[{label:"萌娘百科", site:"moegirl.org.cn"}, {label:"Bangumi 番组计划", site:"bgm.tv"},
+             {label:"Mooncell（FGO 中文维基）", site:"fgo.wiki", when:/fate|fgo|型月|月姬|空之境界|魔法使之夜/i}],
+    tierRules:[], tierLabel:{},
+    examples:[["Fate","Archer 的狙击范围是 4 公里以内"],["Fate","Trace on 是投影魔术的正规魔术师咒文"],
+              ["Fate","异闻带摩根具体是什么身份？"],["龙珠","悟空第一次变成超级赛亚人是在漫画第几话？"],["咒术回战","日车宽见的领域叫诛伏赐死"]]
+  },
+  wenshi: {
+    id:"wenshi", tab:"名言·文史", title:"名言文史侦探",
+    intro:"“鲁迅说过”“孔子说过”“这块碑是真迹”？丢进来。它会去找原典原文和权威资料，核对出处、措辞和语境。网上的鸡汤语录不算数。",
+    workLabel:"相关人物或典籍（可选）", workPlaceholder:"例：鲁迅 / 论语 / 王羲之 / 说文解字",
+    works:["鲁迅","论语","爱因斯坦","王羲之","说文解字"],
+    claimPlaceholder:"例：孔子主张以德报怨",
+    role:"文史考据员",
+    planHint:`领域：名人名言、诗词出处、成语典故、汉字字源演变、书法碑帖、历史说法。
+常见误传类型：张冠李戴（把甲的话安到乙头上）；网络杜撰的“名言”；断章取义（原文是反问或是转述别人的话）；改字（流传版本和原文措辞不同）；翻译变形；把后人评价当本人原话；把传说当史实；把学界争议说成定论。
+必须设法找到原始出处：作者、书名、篇名，最好有原文句子。
+细节词要包含：名言里最有辨识度的原文片段（4到8个字，一个片段一个词）、出处书名或篇名、关键人名；汉字类要包含“甲骨文、金文、小篆、说文”等字源词。
+另给一个 source_query：2到4个词的短搜索词，专门用于在古籍库、辞书站内搜索（站内搜索对长句很不灵）。`,
+    judgeHint:`权威顺序：原典原文（古籍、作家全集、维基文库、中国哲学书电子化计划）与博物馆、学术机构 > 权威辞书（汉典、说文解字）> 正规媒体辟谣、学术文章 > 百科 > 社区 > 语录站、鸡汤号、问答站。
+名言类：只有找到原典原句（并能指出书名或篇名）才算“有出处”；原文意思相反、是反问、或是转述别人的话，判“说法有偷换”；只在语录站、鸡汤文里出现，判“查不到”，并在 summary 里写明“未找到原始出处”。
+碑帖真伪、断代等学术争议：不要替学界下结论，把各方观点和出处并列，用“说法有分歧/来源有分歧”。`,
+    sources:[{label:"维基文库（古籍与全集原文）", site:"zh.wikisource.org"}, {label:"中国哲学书电子化计划", site:"ctext.org"},
+             {label:"汉典（字源与辞书）", site:"zdic.net"}, {label:"中国互联网联合辟谣平台", site:"piyao.org.cn"}],
+    tierRules:[["官方", /wikisource\.org|ctext\.org|zdic\.net|guoxuedashi|shuowen|dpm\.org\.cn|chnmuseum\.cn|luxunmuseum|cssn\.cn|cass\.(cn|net)|piyao\.org\.cn|nlc\.cn|npm\.gov\.tw|shuge\.org|kepu\.(gov|net)/i],
+               ["问答农场", /mingyan|juzi|geyan|yulu|ju111|wenzhangba|siandian|zuowen|lizhi|jitang|wenku\.baidu|doc88|book118|360doc/i]],
+    tierLabel:{"官方":"原典/权威"},
+    examples:[["论语","孔子主张以德报怨"],["爱因斯坦","爱因斯坦说过：疯狂就是一遍遍重复做同一件事，却期待不同的结果"],
+              ["鲁迅","“不在沉默中爆发，就在沉默中灭亡”出自鲁迅的哪篇文章？"],["王羲之","《兰亭序》真迹陪葬在唐太宗的昭陵里"],
+              ["说文解字","“家”字下面的“豕”是猪的意思"]]
+  }
+};
+PROFILES.meme = {
+  id:"meme", tab:"热梗", title:"热梗溯源侦探",
+  intro:"刷到看不懂的梗？丢进来。它会中外一起搜，查清这个梗是什么意思、最早出自哪里、怎么火起来的，带原文、图和视频。",
+  workLabel:"在哪刷到的（可选）", workPlaceholder:"例：抖音 / B站 / TikTok / 漫威 / 短剧",
+  works:["抖音","B站","TikTok","漫威","短剧"],
+  claimPlaceholder:"例：676767 是什么梗？",
+  role:"网络流行文化研究员",
+  planHint:`领域：网络热梗、迷因（meme）、影视台词梗、表情包、短剧套路、AI 生成内容的梗。
+梗不分国内外，很多梗来自海外（TikTok、YouTube、Reddit），必须中文、英文一起搜，必要时加日文、韩文。
+常见情况：数字或谐音梗（如 676767 实际是英文 "six seven"、写作 6-7 或 67）；外语梗被音译或误传；影视台词被断章取义；表情包换了含义；同一个梗在国内外意思不同。
+细节词要包含：梗的各种写法（原样、拆开、阿拉伯数字和英文单词、拼音或谐音）、英文 meme 名、可能的出处（歌名、人名、作品名、平台名）。
+queries 至少一条中文“是什么梗 出处”、至少一条英文“meme origin / what does it mean”。
+只讲梗本身的意思和来源，不深挖、不点名普通人当事人。`,
+  judgeHint:`权威顺序：Know Your Meme、萌娘百科、维基百科及其镜像、百度百科的梗词条 > 正规媒体报道 > B站、知乎、微博、Reddit 讨论 > 营销号、问答站。
+summary 要讲清三件事：这个梗是什么意思、最早出自哪里（谁、哪个平台、什么时候）、怎么火起来的；最早出处只有一个来源说的，要在 caveat 里提醒。
+摘录里有时间信息时，额外输出 timeline：[{"date":"2024-12","event":"……","cite":[编号]}]，按时间排序，只写摘录里有的。
+不点名、不评价普通人当事人。`,
+  sources:[{label:"Know Your Meme", site:"knowyourmeme.com"}, {label:"萌娘百科", site:"moegirl.org.cn"}, {label:"百度百科", site:"baike.baidu.com"}],
+  tierRules:[["百科", /knowyourmeme\.com|wikiwand\.com|urbandictionary\.com|jikipedia\.com/i],
+             ["问答农场", /baijiahao\.baidu|wenku\.baidu|ergngevd|vvikipedla|chped\.com|gtranslate\.net/i]],
+  tierLabel:{}, media:true,
+  examples:[["","676767 是什么梗？"],["","“站住了，不烧心”是什么梗？"],["短剧","短剧里“抓小三”的套路是从哪来的？"],["漫威","“I am inevitable”为什么成了梗？"],["TikTok","Skibidi 是什么意思？"]]
+};
+let PROFILE = PROFILES.acg;
+</script>
+<script id="detective">
+/* ================= 侦探模式：元宝搜索 + 大模型读原句 ================= */
+const DETECTIVE = (() => {
+  const SYN = [["公里","km","千米","キロ"],["米","m"],["咒文","咏唱","詠唱","呪文","咒语","启动语","暗示"],["射程","攻击范围","狙击范围","射击距离"]];
+  function expand(terms){
+    const out = new Set();
+    terms.forEach(t => { if (!t) return; out.add(t);
+      SYN.forEach(group => { if (group.some(g => t.toLowerCase().includes(g.toLowerCase())))
+        group.forEach(g => out.add(t.replace(new RegExp(group.find(x=>t.toLowerCase().includes(x.toLowerCase())),"i"), g))); });
+      const m = t.match(/^(\d+(?:\.\d+)?)\s*(公里|千米|km)$/i); if (m) ["公里","千米","km","KM","キロ"].forEach(u => { out.add(m[1]+u); out.add(m[1]+" "+u); });
+    });
+    return [...out].filter(x => x.length >= 1);
+  }
+  // 把长文切句，只保留提到细节词的句子（含前后半句），这样角色词条的开头不会占满证据
+  function snippets(text, terms){
+    const t = (text||"").replace(/\s+/g," ");
+    const low = t.toLowerCase();
+    const hits = [];
+    terms.forEach(term => {
+      const k = term.toLowerCase(); let i = low.indexOf(k);
+      while (i >= 0 && hits.length < 12){ hits.push(i); i = low.indexOf(k, i + k.length); }
+    });
+    hits.sort((a,b)=>a-b);
+    const out = []; let lastEnd = -1;
+    hits.forEach(i => {
+      let s = Math.max(0, i - 90), e = Math.min(t.length, i + 130);
+      const ps = t.lastIndexOf("。", i); if (ps > s) s = ps + 1;
+      const pe = t.indexOf("。", i); if (pe > 0 && pe < e) e = pe + 1;
+      if (s <= lastEnd) { out[out.length-1].end = Math.max(out[out.length-1].end, e); lastEnd = out[out.length-1].end; return; }
+      out.push({start:s, end:e}); lastEnd = e;
+    });
+    return out.slice(0,3).map(x => t.slice(x.start, x.end).trim());
+  }
+  function parseJSON(txt){
+    const tries = [];
+    const raw = (txt||"").replace(/^```(?:json)?\s*|\s*```$/g,"");
+    tries.push(raw);
+    const m = raw.match(/\{[\s\S]*\}/); if (m) tries.push(m[0]);
+    // 常见毛病：字符串里有裸换行、结尾多逗号、英文双引号没转义
+    const fix = s => s.replace(/,\s*([}\]])/g,"$1")
+      .replace(/"((?:[^"\\]|\\.)*)"/g, (all, inner) => '"' + inner.replace(/\n/g,"\\n").replace(/\r/g,"") + '"');
+    tries.push(fix(m ? m[0] : raw));
+    for (const t of tries){ try { return JSON.parse(t); } catch(e){} }
+    return null;
+  }
+  async function llm(stage, system, user){
+    const call = async (messages) => {
+      const r = await fetch("/api/llm",{method:"POST",headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({stage, json:true, max_tokens:4000, messages})});
+      const d = await r.json();
+      if (d.error) throw new Error(typeof d.error === "string" ? d.error : (d.error.message || JSON.stringify(d.error)));
+      return d.choices && d.choices[0] && d.choices[0].message.content || "";
+    };
+    const msgs = [{role:"system",content:system},{role:"user",content:user}];
+    const txt = await call(msgs);
+    let j = parseJSON(txt);
+    if (!j){
+      console.warn("模型输出无法解析，要求重发：", txt);
+      const txt2 = await call(msgs.concat([{role:"assistant",content:txt},
+        {role:"user",content:"上面的输出不是合法 json（可能有未转义的英文双引号或被截断）。请重新输出完整、合法的 json，quote 里的英文双引号改成中文引号，内容精简。"}]));
+      j = parseJSON(txt2);
+      if (!j) throw new Error("模型两次都没给出合法结果，请重试：" + (txt2||"").slice(0,120));
+    }
+    return j;
+  }
+
+  const PLAN_SYS = (P) => `你是${P.role}，负责把用户输入拆成可搜索的调查计划。只输出 json。
+${P.planHint}
+
+第零步：输入检查，决定 status。
+- "needs_clarification"：没有可核实的点（如“摩根这个角色怎么样”）、指代不清（如“他是不是说过这句话”）、主体有歧义且推断不出来、或是观点题（如“谁最强”）。此时给 1 到 2 个 questions，每个带 2 到 3 个可以直接拿来查的改写 options。
+- "out_of_scope"：时政，或涉及普通人的信息（家庭、住址、隐私）。此时给 reason。
+- "ok"：可以查。能从“相关”栏或常识推断出主体时，不要追问，把推断写进 assumption。
+第一步：判断输入类型。
+- "claim"：一句需要核实真假的说法。
+- "question"：一个需要找答案的问题（带问号，或含“是什么、第几、为什么、是谁、出自哪里”等疑问词）。
+第二步：区分“主体”（人物、作品、典籍名）和“细节”（真正要核实或要回答的具体点）。
+- 搜索词要围绕细节，不要只搜主体名，否则会搜回整页人物/角色词条。
+- detail_terms 用来在网页原文里逐字定位相关句子，所以必须是短词（2到8个字），一个词一个概念，不要拼成长短语，8到12个。
+  例：要查“异闻带摩根的身份”，应给 ["托内莉可","梣","异闻带","妖精国","女王","モルガン","Tonelico"]，而不是 ["异闻带摩根身份"]。
+  例：要查“孔子主张以德报怨”，应给 ["以德报怨","以直报怨","何以报德","宪问","论语"]。
+- queries：3到4条搜索词，每条都必须含细节；至少一条用来找“原始出处”，至少一条用来找“辟谣/争议/误传”。
+- source_query：2到4个词的短搜索词，用于在百科、古籍库等站内搜索。
+如果用户补充了线索（clues），搜索词要用上线索。
+输出格式：{"status":"ok|needs_clarification|out_of_scope","questions":[{"q":"问题","options":["改写1","改写2"]}],"reason":"","assumption":"","type":"claim或question","subject":["主体词"],"detail_terms":["短词"],"queries":["..."],"source_query":"短词","what_to_verify":"一句话：要核实的说法，或要回答的问题"}`;
+
+  const RULES = (P) => `你只能依据下面的网页原句摘录（每条有编号 [n]）作答，绝不能用自己的记忆补充事实。
+- 每条引用必须从摘录里逐字复制 quote，不得改写，不得编造编号；id 就是摘录编号。
+- 只提到人物、角色或作品、没谈到这个具体点的摘录，不能当证据。
+- ${P.judgeHint}
+- 百科类是正常可用的来源，不要说它们可信度有限。只有当关键证据主要来自同人创作、语录站、问答站、内容农场时，才在 caveat 里提醒；否则 caveat 用来说明还没查到的部分，或留空。
+- summary 要让完全不懂这个领域的人也能看懂：先给结论，再给关键依据，关键处用 [编号] 标注。`;
+
+  const OUT = `"true_points":[{"text":"摘录能证实的点","cite":[编号]}],"false_points":[{"text":"摘录能证伪、或流传说法与原文不符的点","cite":[编号]}],"unknown_points":["摘录里查不到的点"],"warrant":"一句话：为什么这些证据能推出这个结论","evidence":[{"id":编号,"quote":"逐字摘录的关键句，不超过60字","stance":"支持|反驳|相关"}],"caveat":"不超过60字，可为空","timeline":[{"date":"可选：摘录里有时间信息时按时间写传播过程","event":"…","cite":[编号]}],"need_clues":["结论是查不到或部分查到时，写需要用户提供哪类线索，如：在哪里看到的、是漫画还是动画、原文措辞"]`;
+
+  const ROUND_SYS = (P) => `你是${P.role}。上一轮搜索后还是没能回答，现在要设计一轮补搜。只输出 json。
+${P.planHint}
+补搜策略只能选一个：
+- "换说法"：细节词或搜索词的说法不对，换同义词、原文语言（日文/英文/文言）、原文里的叫法
+- "放宽"：条件太窄，去掉限定词
+- "反向"：搜“辟谣、误传、争议、不是”
+- "权威源"：只有弱来源，到权威站点里定向搜（给 sites）
+- "顺藤摸瓜"：用上一轮原句里出现的新人名、书名、篇名、章节名再搜
+要求：queries 1 到 4 条，不能和已经搜过的重复；add_terms 是新增的细节短词（2到8字）。
+输出格式：{"strategy":"...","why":"一句话说明为什么这样补搜","add_terms":["..."],"queries":["..."],"sites":[]}`;
+
+  const JUDGE_CLAIM_SYS = (P) => `你是严谨的${P.role}，任务是核实一句说法的真假。
+${RULES(P)}
+verdict 只能选：
+- "有出处"：有原句直接说明了这件事，且与说法一致。
+- "说法有偷换"：有原句谈到相关内容，但意思不同（偷换概念、断章取义、张冠李戴、改字、把个人习惯说成通用规则）。
+- "说法有分歧"：不同摘录互相矛盾，或属于尚无定论的争议。
+- "查不到"：没有摘录直接谈到这个具体点。
+只输出 json：{"verdict":"...","summary":"不超过100字，说清真相是什么，关键处用 [编号] 标注出处",${OUT}}`;
+
+  const JUDGE_Q_SYS = (P) => `你是严谨的${P.role}，任务是回答一个问题。
+${RULES(P)}
+verdict 只能选：
+- "查到答案"：摘录足以回答这个问题。
+- "部分查到"：摘录只能回答问题的一部分，要说明哪部分没查到。
+- "来源有分歧"：不同摘录给出互相矛盾的答案，或属于尚无定论的争议，要分别列出。
+- "查不到"：没有摘录能回答这个问题。
+只输出 json：{"verdict":"...","summary":"不超过120字，直接给出答案（只用摘录里有的信息），并说明哪些没查到，关键处用 [编号] 标注出处",${OUT}}`;
+
+  function tierFor(url, site, P){
+    for (const [name, re] of (P.tierRules||[])) if (re.test(url||"")) return name;
+    return ENGINE.tierOf(url, site);
+  }
+
+  /* ---------- 纯函数：和 Skill 脚本 detective.py 同一套规则，有单元测试 ---------- */
+  const STRATEGIES = ["换说法","放宽","反向","权威源","顺藤摸瓜"];
+  const MAX_ROUNDS = 3;
+  const DEFAULT_CLUES = ["你是在哪里看到这个说法的（帖子、视频、书名）","是哪个版本（漫画还是动画、哪条路线、哪个译本）","原文的大概措辞，或者它原本是哪种语言"];
+  const W = {"官方":3,"百科":2,"媒体":1.2,"社区":1.2,"其他":1,"问答农场":0.4};
+  const clone = o => JSON.parse(JSON.stringify(o));
+  const keyOf = url => url.replace(/[?#].*$/,"").replace(/^https?:\/\/(www\.|m\.|wap)?/,"");
+
+  function validatePlan(p){
+    const e = [];
+    if (!["ok","needs_clarification","out_of_scope"].includes(p && p.status)) e.push("status 必须是 ok / needs_clarification / out_of_scope");
+    if (!String((p && p.claim) || "").trim()) e.push("claim 必填");
+    if (p && p.status === "needs_clarification"){
+      const q = p.questions; if (!Array.isArray(q) || q.length < 1 || q.length > 2 || !q.every(x => x && x.q)) e.push("questions 必须是 1 到 2 个");
+    }
+    if (p && p.status === "out_of_scope" && !String(p.reason || "").trim()) e.push("reason 必填");
+    if (p && p.status === "ok"){
+      if (!["claim","question"].includes(p.type)) e.push("type 必须是 claim 或 question");
+      if (!Array.isArray(p.detail_terms) || p.detail_terms.filter(t => String(t).trim()).length < 3) e.push("detail_terms 至少 3 个");
+      if (!Array.isArray(p.queries) || p.queries.filter(t => String(t).trim()).length < 1) e.push("queries 至少 1 条");
+    }
+    return e;
+  }
+
+  function absorb(raw, runs, round){
+    let n = 0;
+    runs.forEach(r => (r.pages||[]).forEach(p => {
+      if (!p || !p.url) return;
+      const k = keyOf(p.url);
+      if (raw[k]){ if (!raw[k].found_by.includes(r.label)) raw[k].found_by.push(r.label); return; }
+      n++;
+      raw[k] = {url:p.url, title:p.title||"", site:p.site||"", date:(p.date||"").slice(0,10), round,
+        text:[p.title, p.content || p.passage].join("。"), found_by:[r.label],
+        pics:(p.pics||p.images||[]).filter(x => x && x.origin_url).slice(0,4)};
+    }));
+    return n;
+  }
+  function pickState(st, P){
+    const terms = expand(st.plan.detail_terms || []);
+    const all = Object.values(st.raw).map(x => ({title:x.title, url:x.url, site:x.site, date:x.date, round:x.round, pics:clone(x.pics||[]),
+      tier: tierFor(x.url, x.site, P), snippets: snippets(x.text, terms), found_by:x.found_by.slice(),
+      termHits: terms.filter(t => x.text.toLowerCase().includes(t.toLowerCase())).length}));
+    const sorted = all.filter(x => x.snippets.length).sort((a,b) => (b.termHits*W[b.tier] + b.found_by.length) - (a.termHits*W[a.tier] + a.found_by.length));
+    const sig = new Set();
+    const detail = sorted.filter(x => { const k = x.snippets.join("").replace(/\s|\[[^\]]*\]/g,"").slice(0,80); if (sig.has(k)) return false; sig.add(k); return true; });
+    st.picked = detail.slice(0,14); st.picked.forEach((x,i) => x.n = i + 1);
+    st.others = all.filter(x => !x.snippets.length);
+    st.stats = {total: all.length, detail: detail.length};
+    return st;
+  }
+  const roundEntry = (round, strategy, why, runs, new_pages) => ({round, strategy, why, new_pages,
+    queries: runs.map(r => ({query:r.query, site:r.site, count:(r.pages||[]).length, error:r.error}))});
+  function buildState(plan, runs, P){
+    const st = {plan: clone(plan), raw:{}, rounds:[]};
+    const n = absorb(st.raw, runs, 1);
+    st.rounds.push(roundEntry(1, "初搜", "按拆解出的搜索词全网搜索，并在权威知识源站内搜索", runs, n));
+    return pickState(st, P);
+  }
+  function mergeRound(state, rp, runs, P){
+    const st = clone(state);
+    (rp.add_terms||[]).forEach(t => { if (t && !st.plan.detail_terms.includes(t)) st.plan.detail_terms.push(t); });
+    const n = absorb(st.raw, runs, rp.round);
+    st.rounds.push(roundEntry(rp.round, rp.strategy, rp.why || "", runs, n));
+    return pickState(st, P);
+  }
+  function newTerms(picked, existing, exclude){
+    const ex = (existing||[]).concat(exclude||[]).map(t => String(t).toLowerCase()).filter(Boolean);
+    const cnt = new Map(), quoted = new Set(); const rx = /《([^》]{2,20})》|「([^」]{2,12})」|“([^”]{2,12})”/g;
+    picked.forEach((x, i) => x.snippets.forEach(s => { let m; rx.lastIndex = 0;
+      while ((m = rx.exec(s))){
+        const t = (m[1]||m[2]||m[3]).trim().replace(/\s*[•・.．]\s*/g,"·");
+        if (!m[1] && /[,，。.!！?？;；:：、]/.test(t)) continue;
+        const tl = t.toLowerCase();
+        if (ex.some(e => tl === e || (tl.includes(e) && tl.length - e.length < 2) || e.includes(tl))) continue;
+        if (!m[1]) quoted.add(t);
+        if (!cnt.has(t)) cnt.set(t, new Set()); cnt.get(t).add(i);
+      }}));
+    // 书名号里的专名出现一次就算；引号里的词要在两个不同来源里出现才算
+    return [...cnt.entries()].filter(([t, v]) => !quoted.has(t) || v.size >= 2).sort((a,b) => b[1].size - a[1].size).map(x => x[0]).slice(0,6);
+  }
+  function diagnose(st){
+    const {total, detail} = st.stats;
+    const strong = st.picked.filter(x => x.tier === "官方" || x.tier === "百科");
+    let kind, suggest, why;
+    if (detail === 0 || (total >= 10 && detail/total < 0.1)){ kind = "terms_miss"; suggest = ["换说法","放宽","反向"]; why = "搜到的网页几乎都没提到细节词，多半是说法不对"; }
+    else if (!strong.length){ kind = "weak_sources"; suggest = ["权威源","反向","顺藤摸瓜"]; why = "提到细节的只有社区、问答等弱来源"; }
+    else { kind = "has_detail"; suggest = ["顺藤摸瓜","反向"]; why = "已有权威来源谈到细节，答不上多半是方向偏了"; }
+    let stop = false, stop_reason = "";
+    if (st.rounds.length >= MAX_ROUNDS){ stop = true; stop_reason = `已到第 ${MAX_ROUNDS} 轮上限`; }
+    else if (st.rounds.length > 1 && st.rounds[st.rounds.length-1].new_pages === 0){ stop = true; stop_reason = "上一轮没有带来新网页"; }
+    return {kind, why, suggest, stop, stop_reason,
+      new_terms: newTerms(st.picked, st.plan.detail_terms, (st.plan.subject||[]).concat(st.plan.work ? [st.plan.work] : []))};
+  }
+  function validateRoundPlan(rp, st){
+    const e = [], expect = st.rounds.length + 1;
+    if (rp.round !== expect) e.push(`round 应为 ${expect}`);
+    if (expect > MAX_ROUNDS) e.push("已到补搜上限");
+    if (!STRATEGIES.includes(rp.strategy)) e.push("strategy 不在允许范围");
+    const tried = st.rounds.flatMap(r => r.queries.map(q => q.query));
+    const q = (rp.queries||[]).filter(x => String(x).trim());
+    if (q.length < 1 || q.length > 4) e.push("queries 必须是 1 到 4 条");
+    if (q.some(x => tried.includes(x))) e.push("queries 和之前的搜索重复");
+    const dg = diagnose(st); if (dg.stop && expect <= MAX_ROUNDS) e.push("不应继续补搜：" + dg.stop_reason);
+    return e;
+  }
+  const needMoreRounds = (judge, st) => ["查不到","部分查到"].includes(judge.verdict) && !diagnose(st).stop;
+  function cluesFor(j){
+    if (!["查不到","部分查到"].includes(j.verdict)) return [];
+    const given = (j.need_clues||[]).filter(c => String(c).trim());
+    if (given.length) return given;
+    return j.verdict === "查不到" ? DEFAULT_CLUES.slice() : [];
+  }
+
+  /* ---------- 流程：输入检查 → 搜索 → 判断 → (查不到就补搜，最多到第 3 轮) → 核对 ---------- */
+  async function doSearch(jobs, searchFn, say){
+    return Promise.all(jobs.map(async j => {
+      try { const {pages} = await searchFn(j.body); say(`   ✓ ${j.label}${j.site ? "（站内搜「" + j.body.Query + "」）" : ""}：${pages.length} 条`); return {label:j.label, query:j.body.Query, site:j.site, pages}; }
+      catch(e){ say(`   ✗ ${j.label}：${e.message}`); return {label:j.label, query:j.body.Query, site:j.site, pages:[], error:e.message}; }
+    }));
+  }
+  async function judgeState(st, P, claim, work){
+    const picked = st.picked;
+    if (!picked.length) return {verdict:"查不到", summary:"搜到的网页都只是在介绍人物或作品，没有一处原句提到这个具体点。", evidence:[], caveat:"", need_clues:[]};
+    const listing = picked.map(x => `[${x.n}] 来源：${x.site || x.url}（${x.tier}）\n${x.snippets.join(" …… ")}`).join("\n\n");
+    const isQ = st.plan.type === "question";
+    return llm("判断", isQ ? JUDGE_Q_SYS(P) : JUDGE_CLAIM_SYS(P),
+      `${P.workLabel.replace(/（.*$/,"")}：${work || "未指定"}\n${isQ ? "问题" : "说法"}：${claim}\n${isQ ? "要回答" : "要核实"}：${st.plan.what_to_verify || ""}${st.plan.clues ? "\n用户补充的线索：" + st.plan.clues : ""}\n\n摘录：\n${listing}`);
+  }
+
+  async function run(claim, work, searchFn, say, P, clues){
+    P = P || PROFILE;
+    say("① 输入检查与拆解：能不能查、主体是什么、要核实的细节是什么……");
+    const plan = await llm("拆解", PLAN_SYS(P), `${P.workLabel.replace(/（.*$/,"")}：${work || "未指定"}\n输入：${claim}${clues ? "\n用户补充的线索：" + clues : ""}`);
+    plan.claim = claim; plan.work = work; if (clues) plan.clues = clues;
+    if (!plan.status) plan.status = "ok";
+    const errs = validatePlan(plan);
+    if (plan.status !== "ok" && !errs.length) return {gate: true, plan, profile:P.id, profileName:P.tab, claim, work};
+    if (errs.length) throw new Error("拆解结果不完整：" + errs.join("；") + "。请重试，或把说法写得更具体。");
+    say(`   类型：${plan.type === "question" ? "问题（找答案）" : "说法（核实真假）"}\n   ${plan.type === "question" ? "要回答" : "要核实"}：${plan.what_to_verify || claim}${plan.assumption ? "\n   按这个理解查：" + plan.assumption : ""}\n   细节词：${(plan.detail_terms||[]).join("、")}`);
+
+    const queries = plan.queries.filter(q => String(q).trim()).slice(0,4);
+    const base = (work && !claim.includes(work) ? work + " " : "") + claim + (clues ? " " + clues : "");
+    if (!queries.includes(base)) queries.push(base);
+    const srcQ = plan.source_query || plan.detail_terms.slice(0,3).join(" ") || claim;
+    const kSources = (P.sources||[]).filter(s => !s.when || s.when.test(claim + " " + work)).slice(0,4);
+    say(`② 第 1 轮：元宝搜索 ${queries.length} 条全网搜索词 + ${kSources.length} 个权威知识源……`);
+    const jobs = queries.map(q => ({label:q, body:{Query:q, Mode:0, Cnt:20}}))
+      .concat(kSources.map(s => ({label:"知识源·" + s.label, site:s.site, body:{Query:(work ? work + " " : "") + srcQ, Site:s.site, Mode:0, Cnt:10}})));
+    const runs = await doSearch(jobs, searchFn, say);
+    if (runs.every(r => r.error)) throw new Error(runs[0].error);
+    let allRuns = runs.map(r => Object.assign({round:1}, r));
+    let videoRun = {pages:[]};
+    try { videoRun = await searchFn({Query: queries[0], Site:"bilibili.com", Mode:0, Cnt:10}); say(`   ✓ B站视频：${videoRun.pages.length} 条`); } catch(e){}
+
+    say("③ 在每个网页里找提到细节的原句（跳过只介绍人物的段落）……");
+    let st = buildState(plan, runs, P);
+    say(`   共 ${st.stats.total} 个网页，其中 ${st.stats.detail} 个真正提到了细节。`);
+    say(`④ 把 ${st.picked.length} 个网页的原句交给模型判断（只许引用，不许补充）……`);
+    let judge = await judgeState(st, P, claim, work);
+
+    while (needMoreRounds(judge, st)){
+      const dg = diagnose(st), n = st.rounds.length + 1;
+      say(`⑤ 第 ${n} 轮补搜：上一轮结论是“${judge.verdict}”。诊断：${dg.why}`);
+      const tried = st.rounds.flatMap(r => r.queries.map(q => q.query));
+      let rp;
+      try {
+        rp = await llm("补搜计划", ROUND_SYS(P), `${P.workLabel.replace(/（.*$/,"")}：${work || "未指定"}\n输入：${claim}\n要${st.plan.type==="question"?"回答":"核实"}：${st.plan.what_to_verify || ""}\n上一轮结论：${judge.verdict}；没查到的：${(judge.unknown_points||[]).join("；")}\n诊断：${dg.why}\n建议策略：${dg.suggest.join("、")}\n原句里出现的新线索词：${dg.new_terms.join("、") || "无"}\n已用细节词：${st.plan.detail_terms.join("、")}\n已经搜过（不要重复）：\n${tried.map(q => "- " + q).join("\n")}`);
+      } catch(e){ say("   补搜计划生成失败，停止补搜：" + e.message); break; }
+      rp.round = n;
+      rp.queries = (rp.queries||[]).filter(q => String(q).trim() && !tried.includes(q)).slice(0,4);
+      if (!STRATEGIES.includes(rp.strategy)) rp.strategy = dg.suggest[0];
+      const bad = validateRoundPlan(rp, st);
+      if (bad.length){ say("   补搜计划不合格，停止补搜：" + bad.join("；")); break; }
+      say(`   策略：${rp.strategy}。${rp.why || ""}${(rp.add_terms||[]).length ? "\n   新增细节词：" + rp.add_terms.join("、") : ""}`);
+      const rjobs = rp.queries.map(q => ({label:q, body:{Query:q, Mode:0, Cnt:20}}))
+        .concat((rp.sites||[]).slice(0,3).map(s => ({label:"站内·" + s, site:s, body:{Query:rp.queries[0], Site:s, Mode:0, Cnt:10}})));
+      const rruns = await doSearch(rjobs, searchFn, say);
+      allRuns = allRuns.concat(rruns.map(r => Object.assign({round:n}, r)));
+      st = mergeRound(st, rp, rruns, P);
+      say(`   本轮新增 ${st.rounds[st.rounds.length-1].new_pages} 个网页；累计 ${st.stats.detail} 个提到细节。重新判断……`);
+      judge = await judgeState(st, P, claim, work);
+    }
+
+    const picked = st.picked;
+    // —— 防幻觉校验：模型引用的每一句话，必须真的出现在对应网页摘录里 ——
+    const norm = s => (s||"").replace(/[\s"“”'‘’。，,.!！?？…·「」『』()（）\-—]/g,"").toLowerCase();
+    (judge.evidence || []).forEach(ev => {
+      const src = picked[(+ev.id) - 1];
+      ev.source = src || null;
+      const q = norm(ev.quote).slice(0, 40);
+      ev.verified = !!(src && q && norm(src.snippets.join("")).includes(q));
+    });
+    const bad = (judge.evidence||[]).filter(e => !e.verified).length;
+    if (bad) say(`   ⚠ 模型有 ${bad} 条引用在原文里对不上，已标红，不计入结论依据。`);
+    (judge.true_points||[]).concat(judge.false_points||[]).forEach(pt => pt.cite = (pt.cite||[]).filter(n => picked[n-1]));
+    if (["有出处","查到答案"].includes(judge.verdict)){
+      const sup = (judge.evidence||[]).filter(e => e.verified && e.stance === "支持" && e.source);
+      if (sup.length && !sup.some(e => ["官方","百科"].includes(e.source.tier))){
+        judge.original_verdict = judge.verdict; judge.verdict = "社区说法";
+        judge.caveat = `支持这个${st.plan.type==="question"?"答案":"说法"}的原句全部来自论坛、讨论帖或同人站，没有找到官方资料或百科原文。` + (judge.caveat ? " " + judge.caveat : "");
+      }
+    }
+    judge.need_clues = cluesFor(judge);
+    const videos = [];
+    (videoRun.pages||[]).concat(...allRuns.map(r=>r.pages)).forEach(p => {
+      const m = (p.url||"").match(/bilibili\.com\/video\/(BV[0-9A-Za-z]{10})/);
+      if (m && !videos.find(v => v.bvid === m[1])) videos.push({bvid:m[1], title:p.title||"", url:p.url});
+    });
+    const subj = (st.plan.subject||[]).concat(work ? [work] : []).map(s => String(s).toLowerCase()).filter(s => s.length >= 2);
+    const onTopic = t => { const x = (t||"").toLowerCase(); return subj.some(s => x.includes(s)); };
+    const detailLow = expand(st.plan.detail_terms || []).map(t => t.toLowerCase()).filter(t => t.length >= 2);
+    const mentions = t => { const x = (t||"").toLowerCase(); return onTopic(x) || (P.media && detailLow.some(d => x.includes(d))); };
+    picked.forEach(s => { if (!mentions(s.title + " " + s.snippets.join(" "))) s.pics = []; else s.pics = (s.pics||[]).filter(p => p.caption && mentions(p.caption)); });
+    return {profile:P.id, profileName:P.tab, claim, work, clues: clues || "", plan: st.plan, queries, runs: allRuns, rounds: st.rounds, judge, picked,
+            videos: videos.filter(v => mentions(v.title)).slice(0,4), others: st.others, stats: st.stats};
+  }
+
+  function toMarkdown(r){
+    const j = r.judge;
+    const L = [`# 查证报告：${r.claim}`, "", `- 时间：${r.time}`, `- 领域：${r.profileName || ""}`, `- 相关：${r.work || "未指定"}`, `- ${r.plan.type==="question"?"要回答":"要核实"}：${r.plan.what_to_verify || ""}`, "",
+      `## 结论：${j.verdict}`, j.summary || "", ""];
+    if (j.caveat) L.push(`> ${j.caveat}`, "");
+    L.push("## 证据（模型引用的原句，已逐字核对；编号对应文末来源列表）");
+    (j.evidence||[]).forEach(e => L.push(`- [${e.id}]【${e.stance}】「${e.quote}」 —— ${e.source ? `[${e.source.site || e.source.title}](${e.source.url})` : "来源编号无效"}${e.verified ? "" : "（⚠ 原文中未找到此句）"}`));
+    if ((j.timeline||[]).length) L.push("", "## 传播时间线", ...j.timeline.filter(t => t && t.event).map(t => `- **${t.date || "时间不详"}** ${t.event}${(t.cite||[]).length ? " " + t.cite.map(c => "[" + c + "]").join("") : ""}`));
+    if ((j.need_clues||[]).length) L.push("", "## 需要你提供的线索", ...j.need_clues.map(c => "- " + c));
+    L.push("", "## 论证图", "```mermaid", argumentMapSource(r), "```");
+    L.push("", "## 调查步骤", `- 细节词：${(r.plan.detail_terms||[]).join("、")}`);
+    if (r.clues) L.push(`- 用户补充的线索：${r.clues}`);
+    (r.rounds||[]).forEach(rd => { L.push(`- 第 ${rd.round} 轮（${rd.strategy}）：${rd.why || ""}；新增网页 ${rd.new_pages} 个`);
+      rd.queries.forEach(x => L.push(`  - 元宝搜索「${x.query}」${x.site ? "（站内：" + x.site + "）" : ""}：${x.error ? "出错" : x.count + " 条"}`)); });
+    L.push(`- 共 ${r.stats.total} 个网页，${r.stats.detail} 个提到细节`, "", "## 提到细节的全部来源");
+    r.picked.forEach((x,i) => L.push(`${i+1}. [${x.title || x.url}](${x.url}) · ${x.tier} · ${x.site}`));
+    const cr = {"@context":"https://schema.org","@type":"ClaimReview",datePublished:new Date().toISOString().slice(0,10),
+      claimReviewed:r.claim, author:{"@type":"Organization",name:"元宝考据侦探"},
+      reviewRating:{"@type":"Rating",alternateName:j.verdict},
+      itemReviewed:{"@type":"Claim",appearance:(j.evidence||[]).filter(e=>e.verified&&e.source).map(e=>({"@type":"CreativeWork",url:e.source.url}))}};
+    L.push("", "## ClaimReview（schema.org 事实核查标准格式）", "```json", JSON.stringify(cr,null,1), "```");
+    return L.join("\n");
+  }
+  return {run, toMarkdown, validatePlan, buildState, mergeRound, newTerms, diagnose, validateRoundPlan, needMoreRounds, cluesFor};
+})();
+</script>
+
+<script>
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+function setProfile(id){
+  PROFILE = PROFILES[id] || PROFILES.acg;
+  try { localStorage.setItem("yb-profile", PROFILE.id); } catch(e){}
+  document.title = PROFILE.title;
+  $("#ptitle").textContent = PROFILE.title; $("#pintro").textContent = PROFILE.intro;
+  $("#worklabel").textContent = PROFILE.workLabel; $("#work").placeholder = PROFILE.workPlaceholder;
+  $("#claim").placeholder = PROFILE.claimPlaceholder;
+  $("#works").innerHTML = PROFILE.works.map(w => `<option>${esc(w)}</option>`).join("");
+  $("#examples").innerHTML = "";
+  PROFILE.examples.forEach(([w,c]) => {
+    const b = document.createElement("button"); b.className = "chip"; b.textContent = c;
+    b.onclick = () => { $("#claim").value = c; $("#work").value = w; $("#claim").focus(); };
+    $("#examples").appendChild(b);
+  });
+  document.querySelectorAll("#tabs button").forEach(b => b.setAttribute("aria-selected", b.dataset.id === PROFILE.id));
+}
+Object.values(PROFILES).forEach(P => {
+  const b = document.createElement("button"); b.textContent = P.tab; b.dataset.id = P.id; b.setAttribute("role","tab");
+  b.onclick = () => { setProfile(P.id); $("#result").innerHTML = ""; };
+  $("#tabs").appendChild(b);
+});
+let saved = "acg"; try { saved = localStorage.getItem("yb-profile") || "acg"; } catch(e){}
+setProfile(saved);
+const tl = t => (PROFILES[window.__reportProfile] || PROFILE).tierLabel[t] || t;
+
+let HAS_LLM = false;
+function refreshStatus(extra){
+  fetch("/api/status").then(r=>r.json()).then(s=>{
+    HAS_LLM = !!s.llm;
+    $("#status").textContent = `本地服务已连接 · ${s.llm ? "侦探模式（元宝搜索 + " + s.model + " 读原句）" : "规则模式（未配置大模型）"} · 本次启动共调用元宝搜索 ${s.calls} 次` + (extra ? " · " + extra : "");
+  }).catch(()=>{ $("#status").textContent = "⚠ 连不上本地服务，请先双击「启动考据侦探.bat」"; });
+}
+refreshStatus();
+
+async function search(body){
+  const r = await fetch("/api/search",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
+  const d = await r.json();
+  const R = d.Response || d;
+  if (R.Error) throw new Error(R.Error.Code + "：" + R.Error.Message);
+  if (d.error) throw new Error(d.error);
+  return {pages:(R.Pages||[]).map(p => { try { return JSON.parse(p); } catch(e){ return null; } }).filter(Boolean), version:R.Version};
+}
+
+function highlight(text, claim){
+  let t = esc(text);
+  const c = claim.replace(/[\s，。、！？,.!?：:“”"《》（）()第几]/g,"");
+  const g = new Set(); for (let i=0;i<c.length-1;i++) g.add(c.slice(i,i+2));
+  g.forEach(x => { if (x.trim()) t = t.split(esc(x)).join("<mark>"+esc(x)+"</mark>"); });
+  return t.replace(/<\/mark><mark>/g,"").replace(/(第\s*[0-9零一二两三四五六七八九十百]{1,6}\s*[集话話回章卷季期])/g,"<b>$1</b>");
+}
+
+function render(r){
+  const v = r.verdict;
+  let h = `<div class="box"><div class="verdict v-${v.level}"><h2>${esc(v.label)}</h2><div>${esc(v.detail)}</div></div>`;
+  r.notes.forEach(n => h += `<div class="note">${esc(n)}</div>`);
+  const shown = r.conflicts.filter(c => c.values.length);
+  if (shown.length){
+    h += `<h3>谁说了什么</h3><table><tr><th>类型</th><th>说法</th><th>来源</th></tr>`;
+    shown.forEach(c => c.values.forEach(x => {
+      h += `<tr><td>${esc(c.kind)}${c.kind===r.asked?" ★":""}</td><td>第 ${x.n}</td><td>${x.srcs.map(s=>`<a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.site)}</a> <span class="tag t-${esc(s.tier)}">${esc(s.tier)}</span>`).join("　")}</td></tr>`;
+    }));
+    h += `</table>`;
+  }
+  h += `<h3>调查步骤</h3><ul class="steps">` + r.steps.map(s=>`<li class="${s.error?'err':''}" title="${esc(s.query)}">${esc(s.label)}：${s.error?'出错':s.count+' 条'}</li>`).join("") + `</ul>`;
+  h += `<h3>证据链 · 共 ${r.stats.total} 条结果，${r.stats.relevant} 条与说法相关</h3>`;
+  if (!r.evidence.length) h += `<p>没有拿到能对上说法的来源。</p>`;
+  r.evidence.forEach((e,i)=>{
+    h += `<div class="ev ${e.tier==='问答农场'?'low':''}">
+      <a href="${esc(e.url)}" target="_blank" rel="noopener">${i+1}. ${esc(e.title||e.url)}</a>
+      <div class="meta"><span class="tag t-${esc(e.tier)}">${esc(e.tier)}</span><span>${esc(e.site)}</span><span>${esc(e.date)}</span>
+        <span>吻合度<span class="bar"><i style="width:${Math.round(e.coverage*100)}%"></i></span></span>
+        <span>由「${esc(e.found_by.join("、"))}」找到</span></div>
+      <p>${highlight(e.passage, r.claim)}</p></div>`;
+  });
+  h += `<details><summary>完整报告 Markdown</summary><pre style="white-space:pre-wrap;font-size:12px">${esc(ENGINE.toMarkdown(r))}</pre></details>`;
+  h += `<div class="status">本次查证调用 ${r.steps.length} 次搜索 · ${esc(r.saved || "")} · ${esc(r.time)}</div></div>`;
+  $("#result").innerHTML = h;
+}
+
+
+const RATING = {
+  "有出处":{c:"found",lv:5,sub:"原文能对上"}, "查到答案":{c:"found",lv:5,sub:"原文能回答"},
+  "部分查到":{c:"part",lv:3,sub:"只答了一部分"},
+  "社区说法":{c:"part",lv:3,sub:"只有论坛这么说"},
+  "说法有偷换":{c:"twist",lv:2,sub:"原文说的是别的"},
+  "说法有分歧":{c:"split",lv:3,sub:"来源互相矛盾"}, "来源有分歧":{c:"split",lv:3,sub:"来源互相矛盾"},
+  "查不到":{c:"none",lv:1,sub:"没有原文支持"}};
+const TIER_ORDER = ["官方","百科","媒体","社区","其他","问答农场"];
+const TIER_VAR = {"官方":"--t-off","百科":"--t-wiki","媒体":"--t-media","社区":"--t-comm","其他":"--mute","问答农场":"--t-farm"};
+
+function cites(text, picked){
+  return esc(text).replace(/\[(\d+(?:[,，、]\s*\d+)*)\]/g, (m, g) => "<sup>" + g.split(/[,，、]\s*/).map(n => {
+    const s = picked[+n-1]; return s ? `<a href="${esc(s.url)}" target="_blank" rel="noopener" title="${esc(s.site)}">[${n}]</a>` : "";
+  }).join("") + "</sup>");
+}
+function mm(t, n){ return String(t||"").replace(/["'`<>{}\[\]()|#;&\n\r]/g," ").replace(/\s+/g," ").trim().slice(0, n||36); }
+function wrapL(t, w){ const s = [...t]; const out = []; for (let i=0;i<s.length;i+=w) out.push(s.slice(i,i+w).join("")); return out.join("<br/>"); }
+
+// 论证图：Toulmin 模型 —— 来源 → 证据原句 → 主张 → (依据) → 结论，从上往下读
+function argumentMapSource(r){
+  const j = r.judge, ev = (j.evidence||[]).filter(e => e.verified && e.source);
+  const L = ["flowchart TB"];
+  L.push(`C["${r.plan.type==="question"?"问题":"说法"}：${wrapL(mm(r.claim,48),16)}"]`);
+  L.push(`V{{"结论：${mm(j.verdict,12)}"}}`);
+  const srcIds = {};
+  ev.forEach((e,i) => {
+    const s = e.source, n = r.picked.indexOf(s) + 1, sid = "S" + n;
+    if (!srcIds[sid]){ srcIds[sid]=1; L.push(`${sid}(["[${n}] ${mm(s.site||s.title,14)}<br/>${tl(s.tier)}"])`); L.push(`class ${sid} src`); }
+    L.push(`E${i}["「${wrapL(mm(e.quote,42),14)}」"]`);
+    L.push(`${sid} --> E${i}`);
+    L.push(`E${i} -->|${e.stance}| C`);
+    L.push(`class E${i} ${e.stance==="支持"?"sup":e.stance==="反驳"?"reb":"rel"}`);
+  });
+  if (!ev.length) L.push(`N["没有可引用的原句"] -.-> C`);
+  L.push(`C -->|"${wrapL("依据：" + mm(j.warrant||"见证据",40),16)}"| V`);
+  L.push(`class V ${(RATING[j.verdict]||{}).c||"none"}`);
+  const dark = matchMedia("(prefers-color-scheme: dark)").matches;
+  L.push(`classDef sup stroke:#1f7a4d,stroke-width:2px`, `classDef reb stroke:#c2410c,stroke-width:2px`,
+         `classDef rel stroke:#8a94a6,stroke-dasharray:4 3`, `classDef src fill:${dark?"#18202c":"#ffffff"},stroke:#8a94a6`,
+         `classDef found stroke:#1f7a4d,stroke-width:3px`, `classDef part stroke:#b7791f,stroke-width:3px`,
+         `classDef twist stroke:#c2410c,stroke-width:3px`, `classDef split stroke:#6d28d9,stroke-width:3px`, `classDef none stroke:#6b7280,stroke-width:3px`);
+  return L.join("\n");
+}
+
+function renderDetective(r){
+  const j = r.judge, R = RATING[j.verdict] || {c:"none",lv:1,sub:""};
+  const isQ = r.plan.type === "question";
+  const verified = (j.evidence||[]).filter(e => e.verified);
+  let h = `<article class="case">`;
+
+  // ① 评级 + 一句话结论（ClaimReview：claimReviewed + reviewRating）
+  h += `<div class="case-head"><div>
+      <div class="case-kind">${esc(r.profileName||"")}${isQ ? "，问题" : "，说法"}${r.work ? "，" + esc(r.work) : ""}</div>
+      <div class="case-claim">${esc(r.claim)}</div>
+      ${r.plan.assumption ? `<p class="hint" style="margin:-6px 0 10px">按这个理解查的：${esc(r.plan.assumption)}</p>` : ""}
+      <p class="case-sum big">${cites(j.summary||"", r.picked)}</p>
+      ${j.caveat ? `<p class="case-sum" style="margin-top:10px;font-size:14px;color:var(--ink2)">${cites(j.caveat, r.picked)}${j.original_verdict ? `（模型原判“${esc(j.original_verdict)}”，因来源级别不够已自动降级）` : ""}</p>` : ""}
+    </div>
+    <div class="stamp v-${R.c}" role="img" aria-label="评级：${esc(j.verdict)}"><b>${esc(j.verdict)}</b><span>${esc(R.sub)}</span>
+      <div class="scale">${[1,2,3,4,5].map(i => `<i class="${i<=R.lv?"on":""}"></i>`).join("")}</div></div>
+  </div>`;
+
+  // 查不到 / 部分查到：试过的搜索 + 需要的线索 + 带线索重查
+  if ((j.need_clues||[]).length){
+    const tried = (r.rounds||[]).flatMap(rd => rd.queries.map(q => `第 ${rd.round} 轮：${q.query}${q.site ? "（站内 " + q.site + "）" : ""}`));
+    h += `<section class="sec clue"><h3>还差一点线索</h3><p class="hint">已经换了 ${(r.rounds||[]).length} 轮角度去搜。补充下面任意一条，就能带着线索再查一次。</p>
+      <ul>${j.need_clues.map(c => `<li>${esc(c)}</li>`).join("")}</ul>
+      <textarea id="clueInput" placeholder="例：我是在 B 站某个解说视频里看到的，说的是动画第 2 季"></textarea>
+      <div class="actions"><button id="clueGo">带着线索再查一次</button></div>
+      <details><summary>已经试过的 ${tried.length} 次搜索</summary><ul>${tried.map(t => `<li>${esc(t)}</li>`).join("")}</ul></details></section>`;
+  }
+  // 传播时间线（热梗等有时间线索时）
+  const tline = (j.timeline||[]).filter(t => t && t.event);
+  if (tline.length) h += `<section class="sec"><h3>传播时间线</h3><p class="hint">只写摘录里有的时间和事件，编号可点开核对。</p><ol class="timeline">${tline.map(t => `<li><b>${esc(t.date||"时间不详")}</b>　${esc(t.event)}${(t.cite||[]).length ? cites(" [" + t.cite.join(",") + "]", r.picked) : ""}</li>`).join("")}</ol></section>`;
+  // ② 对的 / 不对的 / 没查到（Snopes 的 What's True / What's False）
+  const pts = (arr) => (arr||[]).length ? `<ul>${arr.map(p => `<li>${esc(p.text||p)}${(p.cite||[]).length ? cites(" [" + p.cite.join(",") + "]", r.picked) : ""}</li>`).join("")}</ul>` : `<div class="empty">无</div>`;
+  h += `<section class="sec"><h3>拆开来看</h3><p class="hint">每一条后面的编号都能点开，直接跳到原网页。</p>
+    <div class="tfu"><div class="c-true"><h4>原文能证实的</h4>${pts(j.true_points)}</div>
+    <div class="c-false"><h4>${isQ ? "和流传说法不一样的" : "原文不支持的"}</h4>${pts(j.false_points)}</div>
+    <div class="c-unk"><h4>没查到的</h4>${pts((j.unknown_points||[]).map(t=>({text:t})))}</div></div></section>`;
+
+  // ⑤ 图片 / 视频（热梗这类“图就是内容”的领域放在论证图前面，其余放在证据清单后面）
+  const mediaAt = (PROFILES[r.profile]||{}).media ? "early" : "late";
+  const mediaStart = h.length;
+  const pics = []; r.picked.forEach((s,i) => (s.pics||[]).forEach(p => { if (pics.length < 12 && !pics.find(x=>x.origin_url===p.origin_url)) pics.push({...p, n:i+1, site:s.site}); }));
+  if (pics.length) h += `<section class="sec"><h3>相关图片</h3><p class="hint">图片来自上面的来源网页，点击放大；图下编号对应来源。</p><div class="gallery">` +
+    pics.map(p => `<figure data-src="${esc(p.origin_url)}"><img src="${esc(p.origin_url)}" alt="${esc(p.caption||"")}" loading="lazy" referrerpolicy="no-referrer" onerror="this.closest('figure').remove()">
+      <figcaption>${esc((p.caption||"").slice(0,40))} [${p.n}]</figcaption></figure>`).join("") + `</div></section>`;
+  if ((r.videos||[]).length) h += `<section class="sec"><h3>相关视频</h3><p class="hint">B 站视频，可直接播放，用来对照原片画面。</p><div class="videos">` +
+    r.videos.map(v => `<div><iframe src="https://player.bilibili.com/player.html?bvid=${esc(v.bvid)}&autoplay=0&high_quality=1" loading="lazy" allowfullscreen sandbox="allow-scripts allow-same-origin allow-popups allow-presentation"></iframe>
+      <p><a href="${esc(v.url)}" target="_blank" rel="noopener">${esc(v.title)}</a></p></div>`).join("") + `</div></section>`;
+
+  const mediaHtml = h.slice(mediaStart); h = h.slice(0, mediaStart);
+  if (mediaAt === "early") h += mediaHtml;
+  // ③ 论证图（Toulmin：主张-证据-依据）
+  h += `<section class="sec"><h3>证据怎么推出结论</h3><p class="hint">从上往下读：哪个网站 → 说了哪句原话 → 支持还是反驳 → 得出结论。绿色是支持，橙色是反驳，虚线是相关但不直接。</p>
+    <div class="map" id="argmap">正在画图……</div></section>`;
+
+  // ④ 证据表
+  h += `<section class="sec"><h3>证据清单</h3><p class="hint">模型引用的每一句都拿回原网页逐字比对过，对不上的标红，不算进结论。方括号编号和上文 [1][2]、文末来源列表是同一套。</p><table>
+    <tr><th>来源</th><th>原句</th><th>立场</th><th>网站</th><th>核对</th></tr>` +
+    (j.evidence||[]).map((e,i) => { const s = e.source||{}; return `<tr><td class="n">${s.url ? `<a href="${esc(s.url)}" target="_blank" rel="noopener">[${e.id}]</a>` : `[${esc(e.id)}]`}</td><td class="q">「${esc(e.quote)}」</td>
+      <td><span class="tag st-${esc(e.stance)}">${esc(e.stance)}</span></td>
+      <td>${s.url ? `<a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.site||s.title)}</a><br><span class="tag t-${esc(s.tier)}">${esc(tl(s.tier))}</span>` : "编号无效"}</td>
+      <td>${e.verified ? `<span class="ok">原文一致</span>` : `<span class="bad">原文找不到</span>`}</td></tr>`; }).join("") +
+    (!(j.evidence||[]).length ? `<tr><td colspan="5">没有可以引用的原句。</td></tr>` : "") + `</table></section>`;
+
+  if (mediaAt === "late") h += mediaHtml;
+  // ⑥ 来源构成
+  const cnt = {}; r.picked.forEach(s => cnt[s.tier] = (cnt[s.tier]||0) + 1);
+  const tot = r.picked.length || 1;
+  h += `<section class="sec"><h3>来源构成</h3><p class="hint">提到这个具体点的 ${r.picked.length} 个网页里，各类来源的占比。官方和百科越多越可靠，问答农场多半是机器生成的。</p>
+    <div class="mix">${TIER_ORDER.filter(t=>cnt[t]).map(t => `<i style="width:${cnt[t]/tot*100}%;background:var(${TIER_VAR[t]})" title="${t} ${cnt[t]}"></i>`).join("")}</div>
+    <div class="legend">${TIER_ORDER.filter(t=>cnt[t]).map(t => `<span><b style="background:var(${TIER_VAR[t]})"></b>${tl(t)} ${cnt[t]}</span>`).join("")}</div></section>`;
+
+  // ⑦ 调查过程 + 全部来源（折叠）
+  h += `<section class="sec"><details><summary>调查过程（${r.runs.length + 1} 次元宝搜索，${r.stats.total} 个网页）</summary><ol class="timeline" style="margin-top:12px">
+      <li>领域：${esc(r.profileName||"")}；识别为${isQ ? "问题，要回答" : "说法，要核实"}：${esc(r.plan.what_to_verify||"")}</li>
+      <li>定位用的细节词：${esc((r.plan.detail_terms||[]).join("、"))}</li>
+      ${r.clues ? `<li>用户补充的线索：${esc(r.clues)}</li>` : ""}
+      ${(r.rounds||[]).map(rd => `<li><b>第 ${rd.round} 轮（${esc(rd.strategy)}）</b>：${esc(rd.why||"")}；新增网页 ${rd.new_pages} 个<br>${rd.queries.map(x => `元宝搜索「${esc(x.query)}」${x.site ? "，限定在 " + esc(x.site) : ""}：${x.error ? "出错" : x.count + " 条"}`).join("<br>")}</li>`).join("")}
+      <li>${r.stats.total} 个网页中，${r.stats.detail} 个提到了这个具体点，取前 ${r.picked.length} 个交给模型</li>
+      <li>模型引用 ${(j.evidence||[]).length} 句，原文核对通过 ${verified.length} 句</li></ol></details></section>`;
+  h += `<section class="sec"><details><summary>提到这个具体点的全部来源（${r.picked.length}）</summary>` +
+    r.picked.map((x,i) => `<div class="src ${x.tier==='问答农场'?'low':''}"><a href="${esc(x.url)}" target="_blank" rel="noopener">[${i+1}] ${esc(x.title||x.url)}</a>
+      <span class="tag t-${esc(x.tier)}">${esc(tl(x.tier))}</span> <span class="meta" style="display:inline">${esc(x.site)} ${esc(x.date)}</span>
+      <p>${x.snippets.map(esc).join(" …… ")}</p></div>`).join("") + `</details>
+    <details style="margin-top:10px"><summary>只提到角色或作品、没谈到这个点的网页（${r.others.length}）</summary>` +
+    r.others.slice(0,30).map(x => `<div class="src"><a href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.title||x.url)}</a> <span class="meta" style="display:inline">${esc(x.site)}</span></div>`).join("") + `</details>
+    <details style="margin-top:10px"><summary>完整报告（Markdown，含 ClaimReview 标准格式）</summary><pre>${esc(DETECTIVE.toMarkdown(r))}</pre></details>
+    <div class="actions"><button id="dl-html">下载 HTML 报告</button><button id="dl-md">下载 Markdown</button></div>
+    <div class="status" id="savedline">${esc(r.saved || "")}　${esc(r.time)}</div></section>`;
+  h += `</article><dialog id="lightbox"><img alt=""></dialog>`;
+  $("#result").innerHTML = h;
+
+  // 图片放大
+  const dlg = document.getElementById("lightbox");
+  document.querySelectorAll(".gallery figure").forEach(f => f.onclick = () => { dlg.querySelector("img").src = f.dataset.src; dlg.showModal(); });
+  dlg.onclick = () => dlg.close();
+  // 下载
+  const dl = (name, text, type) => { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text],{type})); a.download = name; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href), 2000); };
+  const fname = "查证报告_" + r.claim.replace(/[\\/:*?"<>|\s]+/g,"_").slice(0,30);
+  $("#dl-html").onclick = () => dl(fname + ".html", exportHTML(r), "text/html;charset=utf-8");
+  $("#dl-md").onclick = () => dl(fname + ".md", DETECTIVE.toMarkdown(r), "text/markdown;charset=utf-8");
+  const cg = $("#clueGo");
+  if (cg) cg.onclick = () => { const v = $("#clueInput").value.trim(); if (!v) return $("#clueInput").focus(); window.__clues = v; window.scrollTo({top:0, behavior:"smooth"}); $("#go").click(); };
+  // 画论证图，画完再返回（导出 HTML 时要带上画好的图）
+  const box = document.getElementById("argmap");
+  return new Promise(done => {
+    if (!window.mermaid){ box.textContent = "论证图组件没加载上（需要联网加载 mermaid）。"; return done(); }
+    try {
+      mermaid.initialize({startOnLoad:false, securityLevel:"loose", theme: matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "neutral",
+        flowchart:{curve:"basis", htmlLabels:true, nodeSpacing:28, rankSpacing:36}, fontFamily:"Noto Sans SC, Microsoft YaHei, sans-serif"});
+      mermaid.render("am" + Date.now(), argumentMapSource(r))
+        .then(({svg}) => { box.innerHTML = svg; done(); })
+        .catch(e => { box.innerHTML = `<pre>${esc(argumentMapSource(r))}</pre>`; done(); });
+    } catch(e){ box.textContent = "论证图绘制失败：" + e.message; done(); }
+  });
+}
+
+// 单文件 HTML 报告：样式、文字、画好的论证图都内嵌，双击就能打开，来源链接可点
+function exportHTML(r){
+  const css = document.querySelector("style").textContent;
+  const node = document.querySelector(".case").cloneNode(true);
+  node.querySelectorAll(".actions").forEach(x => x.remove());
+  node.querySelectorAll("details").forEach(d => d.open = false);
+  return `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>查证报告：${esc(r.claim)}</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@600;700&display=swap" rel="stylesheet">
+<style>${css}</style></head><body><div class="wrap">
+<header><h1>查证报告</h1><p>${esc(r.profileName||"")}｜搜索：元宝搜索｜判断：大模型只读原句并逐字核对引用｜${esc(r.time)}</p></header>
+${node.outerHTML}
+<footer>本报告由「元宝考据侦探」生成。结论只依据搜到的公开网页原句，请点开来源核对原文。</footer></div></body></html>`;
+}
+
+function renderGate(r){
+  const p = r.plan, isOut = p.status === "out_of_scope";
+  let h = `<article class="case"><div class="case-head"><div><div class="case-kind">${esc(r.profileName)}，没有开始搜索</div>
+    <div class="case-claim">${esc(r.claim)}</div>
+    <p class="case-sum big">${isOut ? esc(p.reason) : "这句话还查不了，先问清楚一点。点一个改写就能直接开查，或者自己改输入框里的内容。"}</p></div>
+    <div class="stamp v-none"><b>${isOut ? "不查" : "先问清楚"}</b><span>${isOut ? "超出范围" : "信息不够"}</span></div></div>`;
+  if (!isOut) h += (p.questions||[]).map(q => `<section class="sec"><h3>${esc(q.q)}</h3><div class="chips">${(q.options||[]).map(o => `<button class="chip gate-opt">${esc(o)}</button>`).join("")}</div></section>`).join("");
+  h += `</article>`;
+  $("#result").innerHTML = h;
+  document.querySelectorAll(".gate-opt").forEach(b => b.onclick = () => { $("#claim").value = b.textContent; $("#go").click(); });
+}
+
+const PSTEPS = ["输入检查与拆解：能不能查、要核实的细节是什么","元宝搜索：全网搜索词 + 权威知识源站内搜索","找原句：只留下真正谈到这个细节的句子","判断：模型只能引用原句下结论，程序逐字核对每一句引用","补搜：查不到时换个角度再搜（最多补 2 轮，没用到就跳过）","生成报告"];
+function progressUI(){
+  $("#result").innerHTML = `<section class="progress" aria-live="polite"><h3>正在查证</h3><div class="pbar"><i id="pbar"></i></div>
+    <ol class="psteps">${PSTEPS.map((s,i) => `<li id="ps${i}"><span class="dot"></span><div>${s}<small></small></div><time></time></li>`).join("")}</ol></section>`;
+  const t0 = Date.now(); let cur = -1, sub = 0;
+  const timer = setInterval(() => { const el = document.querySelector(`#ps${cur} time`); if (el) el.textContent = Math.round((Date.now()-t0)/1000) + " 秒"; }, 500);
+  const set = i => {
+    for (let k=0;k<PSTEPS.length;k++){ const li = $("#ps"+k); if (!li) continue; li.className = k < i ? "done" : k === i ? "on" : ""; if (k < i) li.querySelector(".dot").textContent = "✓"; }
+    cur = i; sub = 0; const b = $("#pbar"); if (b) b.style.width = (6 + i * 18) + "%";
+  };
+  return {
+    say(msg){
+      const m = "①②③④⑤".indexOf(msg.trim()[0]);
+      if (m >= 0){ set(m); return; }
+      if (cur < 0) return;
+      const sm = document.querySelector(`#ps${cur} small`); if (!sm) return;
+      const lines = (sm.textContent ? sm.textContent.split("\n") : []).concat(msg.trim()).slice(-4);
+      sm.textContent = lines.join("\n");
+      if (/^✓|^✗/.test(msg.trim())){ sub++; const b = $("#pbar"); if (b) b.style.width = Math.min(6 + cur*18 + sub*2, 6 + (cur+1)*18) + "%"; }
+    },
+    finish(){ set(5); clearInterval(timer); },
+    stop(){ clearInterval(timer); }
+  };
+}
+
+$("#go").onclick = async () => {
+  const claim = $("#claim").value.trim(), work = $("#work").value.trim();
+  if (!claim) return $("#claim").focus();
+  $("#go").disabled = true;
+  const ui = progressUI(); const say = s => ui.say(s);
+  window.__reportProfile = PROFILE.id;
+  if (HAS_LLM){
+    try{
+      const clues = window.__clues || ""; window.__clues = "";
+      const r = await DETECTIVE.run(claim, work, search, say, PROFILE, clues);
+      if (r.gate){ ui.stop(); renderGate(r); return; }
+      r.time = new Date().toLocaleString("zh-CN");
+      ui.finish();
+      window.__lastReport = r;
+      await renderDetective(r);
+      try {
+        const s = await (await fetch("/api/save",{method:"POST",headers:{"Content-Type":"application/json"},
+          body:JSON.stringify({name:claim, markdown:DETECTIVE.toMarkdown(r), html:exportHTML(r), json:JSON.stringify(r,null,1)})})).json();
+        if (s.file) $("#savedline").textContent = "报告已保存到 " + s.file.replace(/\.md$/,"") + "（.html / .md / .json）　" + r.time;
+      } catch(e){}
+      refreshStatus();
+    }catch(e){
+      ui.stop();
+      $("#result").innerHTML = `<div class="box"><div class="verdict v-none"><h2>出错了</h2><div>${esc(e.message)}</div><p class="hint">可以直接再点一次「开始查证」重试。</p></div></div>`;
+    }finally{ $("#go").disabled = false; }
+    return;
+  }
+  // 未配置大模型时的规则模式
+  const {query, angles} = ENGINE.plan(claim, work);
+  say("① 拆解"); say("② 搜索");
+  try{
+    const runs = await Promise.all(angles.map(async a => {
+      try { const {pages, version} = await search(a.body); say(`✓ ${a.label}：${pages.length} 条`);
+            return {label:a.label, pages, version, query:a.body.Query, site:a.body.Site}; }
+      catch(e){ say(`✗ ${a.label}：${e.message}`); return {label:a.label, pages:[], error:e.message, query:a.body.Query, site:a.body.Site}; }
+    }));
+    if (runs.every(r => r.error)) throw new Error(runs[0].error);
+    say("③ 比对");
+    const r = ENGINE.analyze(claim, work, runs);
+    r.query = query; r.time = new Date().toLocaleString("zh-CN");
+    r.steps = runs.map(x => ({label:x.label, count:x.pages.length, error:x.error, query:x.query, site:x.site}));
+    try {
+      const s = await (await fetch("/api/save",{method:"POST",headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({name:claim, markdown:ENGINE.toMarkdown(r), json:JSON.stringify({...r, raw_runs:runs},null,1)})})).json();
+      r.saved = s.file ? "报告已保存：" + s.file : "";
+    } catch(e){}
+    ui.finish(); render(r); refreshStatus();
+  }catch(e){
+    ui.stop();
+    $("#result").innerHTML = `<div class="box"><div class="verdict v-none"><h2>出错了</h2><div>${esc(e.message)}</div></div></div>`;
+  }finally{ $("#go").disabled = false; }
+};
+</script>
+</body>
+</html>

@@ -1,0 +1,10 @@
+.env
+*.env
+!.env.example
+reports/
+work/
+__pycache__/
+*.pyc
+node_modules/
+run_log.txt
+ps_log.txt

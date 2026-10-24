@@ -1,0 +1,72 @@
+{
+ "status": "completed",
+ "verdict": "说法有偷换",
+ "rating": 2,
+ "summary": "孔子并不主张以德报怨。《论语·宪问》里这句话是别人问孔子的，孔子反问“何以报德”，主张“以直报怨，以德报德”[2][3]。",
+ "claim": "孔子主张以德报怨",
+ "rounds": 2,
+ "evidence": [
+  {
+   "id": 3,
+   "quote": "或曰:“以德报怨,何如?”子曰:“何以报德?以德一作“直”报怨,以德报德。",
+   "stance": "反驳",
+   "url": "https://zh.wikisource.org/zh-hans/%E8%AB%96%E8%AA%9E/%E6%86%B2%E5%95%8F%E7%AC%AC%E5%8D%81%E5%9B%9B",
+   "site": "zh.wikisource.org",
+   "verified": true
+  },
+  {
+   "id": 2,
+   "quote": "出处 《论语·宪问》",
+   "stance": "相关",
+   "url": "https://zdic.net/hans/%E4%BB%A5%E5%BE%B7%E5%A0%B1%E6%80%A8",
+   "site": "zdic.net",
+   "verified": true
+  },
+  {
+   "id": 4,
+   "quote": "孔子认为以德报怨是不对的,应该以直报怨,以德报德",
+   "stance": "反驳",
+   "url": "https://baike.baidu.com/tashuo/browse/content?id=9b9d9c1a668d5835d8269e87",
+   "site": "百度百科",
+   "verified": true
+  }
+ ],
+ "need_clues": [],
+ "questions": [],
+ "reason": "",
+ "report_path": "w/report.md",
+ "claim_review": {
+  "@context": "https://schema.org",
+  "@type": "ClaimReview",
+  "datePublished": "2026-10-24",
+  "claimReviewed": "孔子主张以德报怨",
+  "author": {
+   "@type": "Organization",
+   "name": "元宝考据侦探"
+  },
+  "reviewRating": {
+   "@type": "Rating",
+   "ratingValue": 2,
+   "bestRating": 5,
+   "worstRating": 1,
+   "alternateName": "说法有偷换"
+  },
+  "itemReviewed": {
+   "@type": "Claim",
+   "appearance": [
+    {
+     "@type": "CreativeWork",
+     "url": "https://zh.wikisource.org/zh-hans/%E8%AB%96%E8%AA%9E/%E6%86%B2%E5%95%8F%E7%AC%AC%E5%8D%81%E5%9B%9B"
+    },
+    {
+     "@type": "CreativeWork",
+     "url": "https://zdic.net/hans/%E4%BB%A5%E5%BE%B7%E5%A0%B1%E6%80%A8"
+    },
+    {
+     "@type": "CreativeWork",
+     "url": "https://baike.baidu.com/tashuo/browse/content?id=9b9d9c1a668d5835d8269e87"
+    }
+   ]
+  }
+ }
+}
