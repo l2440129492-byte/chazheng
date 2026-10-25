@@ -130,3 +130,6 @@
 ## 参赛材料与 Cloudflare 部署支持（2026-10-25）
 
 新增 `materials/`：1600×1200 作品封面（grok-media 生成背景 + HTML 排版）、三份真实查证全页截图（文史/二次元/热梗）与《作品说明》（含答案、一句话说明、可点击来源链接）。修复热梗类长报告因 max_tokens=4000 截断导致的 JSON 解析失败（提高到 8000），模型转发超时提高到 300 秒。新增 `web/functions/api/`（Cloudflare Pages Functions：status/search/llm 代理，密钥走 Pages 环境变量）与 `web/DEPLOY-CLOUDFLARE.md`；无本地文件系统的托管环境保存报告自动回退为浏览器下载。19 项网页测试通过。封面演示地址 chazheng-detective.pages.dev 需按文档部署后生效。
+## Cloudflare Pages 上线（2026-10-25）
+
+网页版已部署至 https://chazheng-detective.pages.dev ：静态资源由 Pages 分发，`/api/*` 由 `web/_worker.js`（单文件 Worker 高级模式，functions/ 目录方案在 wrangler 4 下未被识别，已移除）代理，密钥为 Pages secrets（YB_API_KEY / LLM_API_KEY / LLM_BASE_URL / LLM_MODEL），不进仓库。线上已实测：/api/status 返回 key:true、llm:true；搜索与模型转发均 200。注意元宝接口 Cnt 仅接受 10 的倍数。本机 CF 凭据为 wrangler OAuth（~/Library/Preferences/.wrangler/config/default.toml），过期可按 tianyuan-site/deploy-pages.sh 的 refresh_token 方式续期。无本地文件系统的托管下保存报告自动回退浏览器下载。

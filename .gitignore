@@ -8,3 +8,4 @@ __pycache__/
 node_modules/
 run_log.txt
 ps_log.txt
+.DS_Store
