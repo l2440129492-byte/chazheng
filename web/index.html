@@ -526,7 +526,7 @@ const DETECTIVE = (() => {
   async function llm(stage, system, user){
     const call = async (messages) => {
       const r = await fetch("/api/llm",{method:"POST",headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({stage, json:true, max_tokens:4000, messages})});
+        body:JSON.stringify({stage, json:true, max_tokens:8000, messages})});
       const d = await r.json();
       if (d.error) throw new Error(typeof d.error === "string" ? d.error : (d.error.message || JSON.stringify(d.error)));
       return d.choices && d.choices[0] && d.choices[0].message.content || "";
@@ -1253,10 +1253,22 @@ $("#go").onclick = async () => {
       window.__lastReport = r;
       await renderDetective(r);
       try {
-        const s = await (await fetch("/api/save",{method:"POST",headers:{"Content-Type":"application/json"},
-          body:JSON.stringify({name:claim, markdown:DETECTIVE.toMarkdown(r), html:exportHTML(r), json:JSON.stringify(r,null,1)})})).json();
-        if (s.file) $("#savedline").textContent = "报告已保存到 " + s.file.replace(/\.md$/,"") + "（.html / .md / .json）　" + r.time;
-      } catch(e){}
+        const saveRes = await fetch("/api/save",{method:"POST",headers:{"Content-Type":"application/json"},
+          body:JSON.stringify({name:claim, markdown:DETECTIVE.toMarkdown(r), html:exportHTML(r), json:JSON.stringify(r,null,1)})});
+        if (!saveRes.ok) throw new Error("no local save");
+        const s = await saveRes.json();
+        if (!s.file) throw new Error("no local save");
+        $("#savedline").textContent = "报告已保存到 " + s.file.replace(/\.md$/,"") + "（.html / .md / .json）　" + r.time;
+      } catch(e){
+        // 静态托管（如 Cloudflare Pages）没有本地文件系统时，改为浏览器直接下载报告。
+        const stem = claim.replace(/[\\/:*?"<>|\s]+/g,"_").slice(0,40) || "报告";
+        for (const [ext, value] of [["html", exportHTML(r)], ["md", DETECTIVE.toMarkdown(r)], ["json", JSON.stringify(r,null,1)]]) {
+          const a = document.createElement("a");
+          a.href = URL.createObjectURL(new Blob([value], {type: ext === "html" ? "text/html" : "text/plain"}));
+          a.download = stem + "." + ext; a.click(); URL.revokeObjectURL(a.href);
+        }
+        $("#savedline").textContent = "报告已下载到本地（.html / .md / .json）　" + r.time;
+      }
       refreshStatus();
     }catch(e){
       ui.stop();
@@ -1282,7 +1294,16 @@ $("#go").onclick = async () => {
       const s = await (await fetch("/api/save",{method:"POST",headers:{"Content-Type":"application/json"},
         body:JSON.stringify({name:claim, markdown:ENGINE.toMarkdown(r), json:JSON.stringify({...r, raw_runs:runs},null,1)})})).json();
       r.saved = s.file ? "报告已保存：" + s.file : "";
-    } catch(e){}
+    } catch(e){
+      // 静态托管没有本地文件系统时，改为浏览器直接下载。
+      const stem = claim.replace(/[\\/:*?"<>|\s]+/g,"_").slice(0,40) || "报告";
+      for (const [ext, value] of [["md", ENGINE.toMarkdown(r)], ["json", JSON.stringify({...r, raw_runs:runs},null,1)]]) {
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(new Blob([value], {type:"text/plain"}));
+        a.download = stem + "." + ext; a.click(); URL.revokeObjectURL(a.href);
+      }
+      r.saved = "报告已下载到本地";
+    }
     ui.finish(); render(r); refreshStatus();
   }catch(e){
     ui.stop();

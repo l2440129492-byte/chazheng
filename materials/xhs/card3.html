@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html,body { width:1080px; height:1440px; overflow:hidden; }
+  body { font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif; position:relative; color:#fff; }
+  .bg { position:absolute; inset:0; width:1080px; height:1440px; object-fit:cover; }
+  .top { position:absolute; top:0; left:0; right:0; padding:64px 72px; }
+  .tag { display:inline-block; background:rgba(255,88,88,.92); border-radius:999px; padding:14px 34px; font-size:34px; font-weight:700; letter-spacing:2px; margin-bottom:34px; }
+  h1 { font-size:84px; font-weight:800; line-height:1.28; text-shadow:0 4px 24px rgba(0,0,0,.55); letter-spacing:2px; }
+  h1 .y { color:#ffd257; }
+  .sub { margin-top:24px; font-size:40px; color:#e8effb; text-shadow:0 2px 14px rgba(0,0,0,.6); line-height:1.5; }
+  .bottom { position:absolute; bottom:0; left:0; right:0; padding:56px 72px 64px;
+    background:linear-gradient(transparent, rgba(8,18,34,.92) 38%); }
+  .steps { display:flex; flex-direction:column; gap:18px; }
+  .s { display:flex; align-items:center; gap:24px; background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.22);
+       border-radius:16px; padding:22px 30px; font-size:38px; backdrop-filter:blur(4px); }
+  .s .n { width:56px; height:56px; border-radius:50%; background:#ffd257; color:#0d1b2e; font-weight:800;
+          display:flex; align-items:center; justify-content:center; font-size:34px; flex:none; }
+  .note { margin-top:26px; font-size:34px; color:#a9c2e2; line-height:1.5; }
+  .note span { color:#7dffb0; font-weight:700; }
+  .brand { margin-top:28px; display:flex; justify-content:space-between; font-size:32px; color:#cfe0f7; }
+  .brand b { color:#fff; }
+</style>
+
+<!-- 卡3：怎么用 -->
+<div id="card3">
+  <img class="bg" src="bg3.png">
+  <div class="top">
+    <div class="tag">🎮 二次元 / 热梗也能查</div>
+    <h1>三步查一个梗<br>AI 不编、<span class="y">句句有出处</span></h1>
+    <div class="sub">火影台词原句、676767 是什么梗，都能溯源</div>
+  </div>
+  <div class="bottom">
+    <div class="steps">
+      <div class="s"><div class="n">1</div><div>输入一句话传闻或问题</div></div>
+      <div class="s"><div class="n">2</div><div>元宝搜索多轮检索原文，自动补搜去重</div></div>
+      <div class="s"><div class="n">3</div><div>出结论：属实 / 有偷换 / 无依据，引用可点击</div></div>
+    </div>
+    <div class="note">模型只能引用搜到的原句下结论，<span>程序逐字核对每一句引用</span>；查不到就明说不知道，绝不硬编。</div>
+    <div class="brand"><div><b>元宝考据侦探</b> · 本地运行 · 免登录</div><div>开源可白嫖 ✅</div></div>
+  </div>
+</div>

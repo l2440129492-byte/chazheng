@@ -80,7 +80,7 @@ function createApp({dir = __dirname, config = loadConfig(dir), searchUrl = 'http
       const stage = isSearch ? '搜索' : String(input.stage || '调用').slice(0,30);
       // 仅在未收到 HTTP 响应时重试一次短暂网络故障；读响应失败不重试。
       const retryable = new Set(['UND_ERR_CONNECT_TIMEOUT','EAI_AGAIN','ECONNREFUSED','ECONNRESET','UND_ERR_SOCKET']);
-      const signal = AbortSignal.timeout(isSearch ? 30000 : 120000);
+      const signal = AbortSignal.timeout(isSearch ? 30000 : 300000);
       let upstream;
       for (let attempt = 0; attempt < 2; attempt++) {
         try {

@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1600px; height: 1200px; overflow: hidden; }
+  body {
+    font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", system-ui, sans-serif;
+    background: #0d1b2e url('cover-bg.png') center/cover no-repeat;
+    color: #eaf1fb;
+    position: relative;
+  }
+  body::before {
+    content: ""; position: absolute; inset: 0;
+    background: linear-gradient(105deg, rgba(10,20,36,.94) 0%, rgba(10,20,36,.86) 46%, rgba(10,20,36,.55) 100%);
+  }
+  /* 背景装饰：放大镜光圈与网格 */
+  .grid {
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(90,140,220,.08) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(90,140,220,.08) 1px, transparent 1px);
+    background-size: 80px 80px;
+  }
+  .glow1, .glow2 {
+    position: absolute; border-radius: 50%; filter: blur(10px);
+  }
+  .glow1 { width: 620px; height: 620px; right: -140px; top: -160px;
+    background: radial-gradient(circle, rgba(56,132,255,.35), transparent 65%); }
+  .glow2 { width: 520px; height: 520px; left: -160px; bottom: -180px;
+    background: radial-gradient(circle, rgba(0,200,160,.22), transparent 65%); }
+  .wrap { position: relative; padding: 100px 120px 96px; height: 100%; display: flex; flex-direction: column; }
+  .badge {
+    display: inline-flex; align-items: center; gap: 14px;
+    background: rgba(56,132,255,.16); border: 1px solid rgba(120,180,255,.45);
+    border-radius: 999px; padding: 14px 30px; font-size: 30px; letter-spacing: 4px;
+    color: #9cc4ff; width: fit-content;
+  }
+  .badge b { color: #fff; letter-spacing: 0; }
+  h1 {
+    margin-top: 66px; font-size: 150px; font-weight: 800; line-height: 1.12;
+    letter-spacing: 6px;
+  }
+  h1 .accent { color: #ffd257; }
+  .sub {
+    margin-top: 34px; font-size: 44px; color: #b9cbe4; letter-spacing: 2px; line-height: 1.55;
+  }
+  .sub b { color: #fff; font-weight: 600; }
+  .flow {
+    margin-top: auto; display: flex; align-items: stretch; gap: 0;
+  }
+  .step {
+    background: rgba(255,255,255,.06); border: 1px solid rgba(140,180,240,.28);
+    border-radius: 22px; padding: 34px 38px; flex: 1;
+  }
+  .step .no { font-size: 26px; color: #7fb0ff; letter-spacing: 3px; margin-bottom: 12px; }
+  .step .t { font-size: 40px; font-weight: 700; color: #fff; margin-bottom: 10px; }
+  .step .d { font-size: 27px; color: #a9bedb; line-height: 1.5; }
+  .arrow {
+    display: flex; align-items: center; padding: 0 22px;
+    font-size: 52px; color: #5f8fd9;
+  }
+  .foot {
+    margin-top: 52px; display: flex; justify-content: space-between; align-items: center;
+    font-size: 30px; color: #8ea8c9;
+  }
+  .foot .tag { color: #ffd257; font-weight: 600; }
+  .demo {
+    display: inline-flex; align-items: center; gap: 14px;
+    background: rgba(255,210,87,.14); border: 1px solid rgba(255,210,87,.55);
+    border-radius: 14px; padding: 12px 22px; color: #ffd257; font-weight: 700;
+    font-size: 34px; letter-spacing: 1px;
+  }
+  .demo small { color: #cbd9ee; font-weight: 400; font-size: 26px; }
+  .lens {
+    position: absolute; right: 150px; top: 300px; width: 280px; height: 280px;
+    border: 14px solid rgba(255,210,87,.9); border-radius: 50%;
+    box-shadow: 0 0 60px rgba(255,210,87,.35), inset 0 0 40px rgba(255,210,87,.15);
+    transform: rotate(-18deg);
+  }
+  .lens::after {
+    content: ""; position: absolute; right: -70px; bottom: -56px; width: 150px; height: 18px;
+    background: rgba(255,210,87,.9); border-radius: 9px; transform: rotate(-45deg);
+  }
+  .lens .q {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    font-size: 120px; font-weight: 800; color: rgba(255,210,87,.95);
+  }
+</style>
+<div class="grid"></div>
+<div class="glow1"></div>
+<div class="glow2"></div>
+<div class="wrap">
+  <div class="badge">🔍 <b>腾讯元宝搜索 · AI 查证</b>&nbsp;侦探赛道参赛作品</div>
+  <h1>元宝考据侦探<br><span class="accent">一句话传闻，一份带引用的结论</span></h1>
+  <div class="sub">输入「孔子主张以德报怨？」这类说法，AI 拆解问题 → 元宝搜索原文 → <b>逐字核对引用</b> → 判定<b>属实 / 有偷换 / 无依据</b></div>
+  <div class="demo" style="margin-top: 40px;">🖥 在线演示：chazheng-detective.pages.dev<small>（源码 github.com/l2440129492-byte/chazheng）</small></div>
+  <div class="lens"><div class="q">？</div></div>
+  <div class="flow">
+    <div class="step"><div class="no">STEP 1</div><div class="t">提问</div><div class="d">文史名言、二次元设定、网络热梗都能查</div></div>
+    <div class="arrow">→</div>
+    <div class="step"><div class="no">STEP 2</div><div class="t">搜索</div><div class="d">元宝搜索多轮检索，自动补搜与去重</div></div>
+    <div class="arrow">→</div>
+    <div class="step"><div class="no">STEP 3</div><div class="t">核对</div><div class="d">引用与搜索摘录逐字一致，杜绝编造</div></div>
+    <div class="arrow">→</div>
+    <div class="step"><div class="no">STEP 4</div><div class="t">结论</div><div class="d">判定 + 证据 + 出处链接，可自行复核</div></div>
+  </div>
+  <div class="foot">
+    <div>网页版 + AI 平台 Skill 版（Claude 等）</div>
+    <div>引用<span class="tag">逐字核对</span> · 结论<span class="tag">可查证</span> · 查不到就明说<span class="tag">不知道</span></div>
+  </div>
+</div>

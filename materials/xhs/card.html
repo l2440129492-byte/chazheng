@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html,body { width:1080px; height:1440px; overflow:hidden; }
+  body { font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif; position:relative; color:#fff; }
+  .bg { position:absolute; inset:0; width:1080px; height:1440px; object-fit:cover; }
+  .top { position:absolute; top:0; left:0; right:0; padding:64px 72px; }
+  .tag { display:inline-block; background:rgba(255,88,88,.92); border-radius:999px; padding:14px 34px; font-size:34px; font-weight:700; letter-spacing:2px; margin-bottom:34px; }
+  h1 { font-size:88px; font-weight:800; line-height:1.25; text-shadow:0 4px 24px rgba(0,0,0,.55); letter-spacing:2px; }
+  h1 .y { color:#ffd257; }
+  .sub { margin-top:24px; font-size:40px; color:#e8effb; text-shadow:0 2px 14px rgba(0,0,0,.6); line-height:1.5; }
+  .bottom { position:absolute; bottom:0; left:0; right:0; padding:56px 72px 64px;
+    background:linear-gradient(transparent, rgba(8,18,34,.92) 38%); }
+  .q { background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.25); border-left:10px solid #ffd257;
+    border-radius:18px; padding:30px 34px; font-size:42px; line-height:1.55; backdrop-filter:blur(4px); }
+  .a { margin-top:22px; font-size:40px; line-height:1.55; }
+  .a b { color:#7dffb0; }
+  .src { margin-top:20px; font-size:30px; color:#a9c2e2; }
+  .src span { color:#ffd257; }
+  .brand { margin-top:30px; display:flex; justify-content:space-between; font-size:32px; color:#cfe0f7; }
+  .brand b { color:#fff; }
+</style>
+
+<!-- 卡1：封面 -->
+<div id="card1">
+  <img class="bg" src="bg1.png">
+  <div class="top">
+    <div class="tag">🔥 AI 查证工具</div>
+    <h1>刷到名言先别转！<br>这个<span class="y">AI 侦探</span>帮你<br>找到原句出处</h1>
+    <div class="sub">一句话传闻进去，带引用的结论出来</div>
+  </div>
+  <div class="bottom">
+    <div class="q">「孔子说：以德报怨」——真是孔子主张的？</div>
+    <div class="a">❌ <b>说法有偷换</b>：原文里这是别人问孔子的问题，孔子答的是「以直报怨，以德报德」（《论语·宪问》）</div>
+    <div class="src">出处可点击：<span>维基文库·论语·宪问</span> 等多来源</div>
+    <div class="brand"><div><b>元宝考据侦探</b> · 网页版免登录</div><div>引用逐字核对 ✅</div></div>
+  </div>
+</div>
