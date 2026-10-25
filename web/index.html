@@ -736,6 +736,28 @@ verdict 只能选：
       `${P.workLabel.replace(/（.*$/,"")}：${work || "未指定"}\n${isQ ? "问题" : "说法"}：${claim}\n${isQ ? "要回答" : "要核实"}：${st.plan.what_to_verify || ""}${st.plan.clues ? "\n用户补充的线索：" + st.plan.clues : ""}\n\n摘录：\n${listing}`);
   }
 
+  function collectMedia(picked, videoPages, plan, work, P){
+    const subjects = (plan.subject||[]).concat(String(work||'').split(/[、；;]+/)).map(x=>String(x).toLowerCase().trim()).filter(x=>x.length>=2);
+    const details = expand(plan.detail_terms||[]).map(x=>x.toLowerCase()).filter(x=>x.length>=2);
+    const mentions = text => { const t=String(text||'').toLowerCase(); return subjects.some(x=>t.includes(x)) || (P.media && details.some(x=>t.includes(x))); };
+    const safeURL = url => { try { return ['http:','https:'].includes(new URL(url).protocol); } catch(e){ return false; } };
+    const ignored = /logo|favicon|banner|二维码|网站标识|网站logo|横幅|广告|图标/i;
+    const result = picked.map(src => ({...src,pics:(src.pics||[]).filter(pic=>{
+      if(!safeURL(pic.origin_url)||ignored.test(pic.caption||'')||/\/(?:logo|favicon|banner)[^/]*[.\/]/i.test(pic.origin_url)) return false;
+      return mentions(pic.caption) || mentions(src.title+' '+(src.snippets||[]).join(' '));
+    }).map(pic=>({...pic,contextOnly:!mentions(pic.caption)}))}));
+    const videos=[];
+    (videoPages||[]).forEach(p=>{
+      let url;try{url=new URL(p.url);}catch(e){return;}
+      if(!/(^|\.)bilibili\.com$/.test(url.hostname))return;
+      const match=url.pathname.match(/\/video\/(?:(BV[0-9A-Za-z]{10})|av(\d+))/);
+      if(!match||!mentions([p.title,p.content,p.passage].join(' ')))return;
+      const id=match[1]||match[2];if(videos.some(v=>(v.bvid||v.aid)===id))return;
+      videos.push({...(match[1]?{bvid:match[1]}:{aid:match[2]}),title:p.title||'相关视频',url:p.url});
+    });
+    return {picked:result,videos:videos.slice(0,4)};
+  }
+
   async function run(claim, work, searchFn, say, P, clues, catalogContext){
     P = P || PROFILE;
     say("① 输入检查与拆解：能不能查、主体是什么、要核实的细节是什么……");
@@ -758,8 +780,20 @@ verdict 只能选：
     const runs = await doSearch(jobs, searchFn, say);
     if (runs.every(r => r.error)) throw new Error(runs[0].error);
     let allRuns = runs.map(r => Object.assign({round:1}, r));
-    let videoRun = {pages:[]};
-    try { videoRun = await searchFn({Query: queries[0], Site:"bilibili.com", Mode:0, Cnt:10}); say(`   ✓ B站视频：${videoRun.pages.length} 条`); } catch(e){}
+    let videoRun = {pages:[],queries:[]};
+    const videoSubject = String((plan.subject||[])[0] || work || '').trim();
+    const videoDetails = (plan.detail_terms||[]).filter(t=>t && t!==videoSubject).slice(0,2);
+    const videoQuery = [videoSubject,...videoDetails].filter(Boolean).join(' ') || claim;
+    const videoJobs = [{Query:videoQuery, Site:"bilibili.com", Mode:0, Cnt:10},
+      {Query:[work||videoSubject,(plan.subject||[]).slice(-1)[0]||'',videoDetails[1]||videoDetails[0]||'',"B站 视频"].filter(Boolean).join(' '),Mode:0,Cnt:10}];
+    for (const body of videoJobs){
+      videoRun.queries.push(body.Query);
+      try {
+        const found = await searchFn(body); videoRun.pages.push(...found.pages);
+        say(`   ✓ 视频检索「${body.Query}」：${found.pages.length} 条`);
+        if(collectMedia([],videoRun.pages,plan,work,P).videos.length) break;
+      } catch(e){videoRun.failed=true;say("   ⚠ 视频检索失败："+e.message);}
+    }
 
     say("③ 在每个网页里找提到细节的原句（跳过只介绍人物的段落）……");
     let st = buildState(plan, runs, P);
@@ -810,18 +844,11 @@ verdict 只能选：
       }
     }
     judge.need_clues = cluesFor(judge);
-    const videos = [];
-    (videoRun.pages||[]).concat(...allRuns.map(r=>r.pages)).forEach(p => {
-      const m = (p.url||"").match(/bilibili\.com\/video\/(BV[0-9A-Za-z]{10})/);
-      if (m && !videos.find(v => v.bvid === m[1])) videos.push({bvid:m[1], title:p.title||"", url:p.url});
-    });
-    const subj = (st.plan.subject||[]).concat(work ? [work] : []).map(s => String(s).toLowerCase()).filter(s => s.length >= 2);
-    const onTopic = t => { const x = (t||"").toLowerCase(); return subj.some(s => x.includes(s)); };
-    const detailLow = expand(st.plan.detail_terms || []).map(t => t.toLowerCase()).filter(t => t.length >= 2);
-    const mentions = t => { const x = (t||"").toLowerCase(); return onTopic(x) || (P.media && detailLow.some(d => x.includes(d))); };
-    picked.forEach(s => { if (!mentions(s.title + " " + s.snippets.join(" "))) s.pics = []; else s.pics = (s.pics||[]).filter(p => p.caption && mentions(p.caption)); });
-    return {profile:P.id, profileName:P.tab, claim, work, clues: clues || "", plan: st.plan, queries, runs: allRuns, rounds: st.rounds, judge, picked,
-            videos: videos.filter(v => mentions(v.title)).slice(0,4), others: st.others, stats: st.stats};
+    const media = collectMedia(picked,(videoRun.pages||[]).concat(...allRuns.map(r=>r.pages)),st.plan,work,P);
+    const mediaStatus = {videoSearchFailed:!!videoRun.failed,videoQueries:videoRun.queries,videoPages:videoRun.pages.length,images:media.picked.reduce((n,p)=>n+p.pics.length,0),videos:media.videos.length};
+    say(`   媒体：保留 ${mediaStatus.images} 张来源页配图、${mediaStatus.videos} 个相关视频${mediaStatus.videoSearchFailed?'（视频检索失败，可重试）':''}。`);
+    return {profile:P.id, profileName:P.tab, claim, work, clues: clues || "", plan: st.plan, queries, runs: allRuns, rounds: st.rounds, judge, picked:media.picked,
+            videos:media.videos,mediaStatus, others: st.others, stats: st.stats};
   }
 
   function toMarkdown(r){
@@ -847,7 +874,7 @@ verdict 只能选：
     L.push("", "## ClaimReview（schema.org 事实核查标准格式）", "```json", JSON.stringify(cr,null,1), "```");
     return L.join("\n");
   }
-  return {run, toMarkdown, validatePlan, buildState, mergeRound, newTerms, diagnose, validateRoundPlan, needMoreRounds, cluesFor};
+  return {run, toMarkdown, validatePlan, buildState, mergeRound, newTerms, diagnose, validateRoundPlan, needMoreRounds, cluesFor, collectMedia};
 })();
 </script>
 
@@ -1081,13 +1108,14 @@ function renderDetective(r){
   const mediaAt = (PROFILES[r.profile]||{}).media ? "early" : "late";
   const mediaStart = h.length;
   const pics = []; r.picked.forEach((s,i) => (s.pics||[]).forEach(p => { if (pics.length < 12 && !pics.find(x=>x.origin_url===p.origin_url)) pics.push({...p, n:i+1, site:s.site}); }));
-  if (pics.length) h += `<section class="sec"><h3>相关图片</h3><p class="hint">图片来自上面的来源网页，点击放大；图下编号对应来源。</p><div class="gallery">` +
-    pics.map(p => `<figure data-src="${esc(p.origin_url)}"><img src="${esc(p.origin_url)}" alt="${esc(p.caption||"")}" loading="lazy" referrerpolicy="no-referrer" onerror="this.closest('figure').remove()">
-      <figcaption>${esc((p.caption||"").slice(0,40))} [${p.n}]</figcaption></figure>`).join("") + `</div></section>`;
-  if ((r.videos||[]).length) h += `<section class="sec"><h3>相关视频</h3><p class="hint">B 站视频，可直接播放，用来对照原片画面。</p><div class="videos">` +
-    r.videos.map(v => `<div><iframe src="https://player.bilibili.com/player.html?bvid=${esc(v.bvid)}&autoplay=0&high_quality=1" loading="lazy" allowfullscreen sandbox="allow-scripts allow-same-origin allow-popups allow-presentation"></iframe>
+  if (pics.length) h += `<section class="sec"><h3>相关图片</h3><p class="hint">图片来自来源网页，仅供参考，不作为查证证据。点击图片放大；加载失败可打开原图。</p><div class="gallery">` +
+    pics.map(p => `<figure data-src="${esc(p.origin_url)}"><img src="${esc(p.origin_url)}" alt="${esc(p.caption||"")}" loading="lazy" referrerpolicy="no-referrer" onerror="this.hidden=true;this.nextElementSibling.hidden=false">
+      <span hidden class="hint">图片暂时无法加载，可点击原图链接查看。</span><figcaption>${esc((p.caption||"来源页配图").slice(0,40))}${p.contextOnly ? "（配图，仅供参考）" : ""} [${p.n}] · <a href="${esc(p.origin_url)}" target="_blank" rel="noopener noreferrer">打开原图</a></figcaption></figure>`).join("") + `</div></section>`;
+  if ((r.videos||[]).length) h += `<section class="sec"><h3>相关视频</h3><p class="hint">B 站相关视频，仅供参考，不作为原片证据。播放器不可用时可点击标题打开。</p><div class="videos">` +
+    r.videos.map(v => `<div><iframe src="https://player.bilibili.com/player.html?${v.bvid ? "bvid="+esc(v.bvid) : "aid="+esc(v.aid)}&autoplay=0&high_quality=1" loading="lazy" allowfullscreen sandbox="allow-scripts allow-same-origin allow-popups allow-presentation"></iframe>
       <p><a href="${esc(v.url)}" target="_blank" rel="noopener">${esc(v.title)}</a></p></div>`).join("") + `</div></section>`;
 
+  if (!pics.length || !(r.videos||[]).length) h += `<p class="hint">${!pics.length ? '本次未找到通过筛选的来源页配图。' : ''}${!(r.videos||[]).length ? (r.mediaStatus?.videoSearchFailed ? '视频检索未成功，可重新查证。' : '本次未找到匹配的 B站视频。') : ''}</p>`;
   const mediaHtml = h.slice(mediaStart); h = h.slice(0, mediaStart);
   if (mediaAt === "early") h += mediaHtml;
   // ③ 论证图（Toulmin：主张-证据-依据）

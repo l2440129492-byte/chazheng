@@ -95,3 +95,21 @@ test("热梗领域：Know Your Meme 当百科、站内搜索里有它", () => {
     [{label:"q", query:"q", pages:[page("https://knowyourmeme.com/memes/67", "67 Meme", "The six seven meme comes from a song")]}], M);
   assert.equal(st.picked[0].tier, "百科");
 });
+
+test('媒体：相关来源页无说明配图保留，标识横幅过滤；多选作品逐个匹配', () => {
+  const picked=[{title:'孔子与论语',snippets:['以直报怨'],pics:[{origin_url:'https://x.test/page.jpg'},{origin_url:'https://x.test/logo.jpg',caption:'网站logo'},{origin_url:'https://x.test/portrait.jpg',caption:'孔子画像'}]}];
+  const result=D.collectMedia(picked,[],{subject:[],detail_terms:['以直报怨']},'孔子、论语',P);
+  assert.equal(result.picked[0].pics.length,2);
+  assert.equal(result.picked[0].pics[0].contextOnly,true);
+  assert.equal(result.picked[0].pics[1].contextOnly,false);
+});
+
+test('媒体：视频按正文匹配，支持BV和av，且不引入无关视频', () => {
+  const result=D.collectMedia([], [
+    {url:'https://www.bilibili.com/video/BV1234567890',title:'经典解读',content:'孔子 以直报怨'},
+    {url:'https://www.bilibili.com/video/av12345',title:'论语解读'},
+    {url:'https://www.bilibili.com/video/BV0000000000',title:'无关内容'}
+  ],{subject:['孔子','论语'],detail_terms:[]},'',P);
+  assert.equal(result.videos.length,2);
+  assert.equal(result.videos[1].aid,'12345');
+});
