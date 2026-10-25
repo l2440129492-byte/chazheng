@@ -250,7 +250,7 @@ def _key(url):
 
 
 def _absorb(raw, runs, round_no):
-    """把一轮搜索结果并入原始网页池，返回新增网页数。"""
+    """把一轮搜索结果并入原始网页池，返回新增网页数。pics（来源页配图）原样保留，供报告展示。"""
     new = 0
     for r in runs:
         for p in r.get("pages") or []:
@@ -265,8 +265,54 @@ def _absorb(raw, runs, round_no):
             new += 1
             raw[k] = {"url": url, "title": p.get("title") or "", "site": p.get("site") or "", "date": (p.get("date") or "")[:10],
                       "text": "。".join([p.get("title") or "", p.get("content") or p.get("passage") or ""]),
+                      "pics": [{"origin_url": x.get("origin_url"), "caption": x.get("caption") or ""}
+                               for x in (p.get("pics") or p.get("images") or []) if isinstance(x, dict) and x.get("origin_url")][:4],
                       "found_by": [r.get("label")], "round": round_no}
     return new
+
+
+IGNORED_PIC = re.compile(r"logo|favicon|banner|二维码|网站标识|网站logo|横幅|广告|图标", re.I)
+
+
+def _mention_terms(plan):
+    subj = [str(s) for s in (plan.get("subject") or []) if len(str(s)) >= 2]
+    subj += [w for w in re.split(r"[、；;]+", plan.get("work") or "") if len(w) >= 2]
+    det = [str(t) for t in expand(plan["detail_terms"]) if len(str(t)) >= 2]
+    return [x.lower() for x in subj + det]
+
+
+def _filter_pics(pics, text, mention):
+    """来源页配图：安全链接、非站点素材、和主题/细节相关的才保留，最多 4 张。"""
+    t = (text or "").lower()
+    out = []
+    for pic in pics or []:
+        u = pic.get("origin_url") or ""
+        cap = pic.get("caption") or ""
+        if not u.startswith(("http://", "https://")):
+            continue
+        if IGNORED_PIC.search(cap) or re.search(r"/(?:logo|favicon|banner)[^/]*[./]", u, re.I):
+            continue
+        cap_hit = any(m in cap.lower() for m in mention)
+        if not (cap_hit or any(m in t for m in mention)):
+            continue
+        out.append({"origin_url": u, "caption": cap, "context_only": not cap_hit})
+    return out[:4]
+
+
+def _pick_videos(state, mention):
+    """从结果池里提 B 站相关视频（页面文字要提到主题或细节），最多 4 个。"""
+    vids = []
+    for x in state["raw"].values():
+        if "bilibili.com" not in (x["url"] or ""):
+            continue
+        m = re.search(r"(BV[0-9A-Za-z]{10}|av\d+)", x["url"])
+        if not m or not any(mm in x["text"].lower() for mm in mention):
+            continue
+        vid = m.group(1)
+        if any(v["id"] == vid for v in vids):
+            continue
+        vids.append({"id": vid, "bvid": vid.startswith("BV"), "title": x["title"] or "相关视频", "url": x["url"]})
+    return vids[:4]
 
 
 def _pick(state):
@@ -288,6 +334,10 @@ def _pick(state):
     picked = dedup[:14]
     for i, x in enumerate(picked, 1):
         x["n"] = i
+    mention = _mention_terms(state["plan"])
+    for x in picked:
+        x["pics"] = _filter_pics(x.get("pics") or (state["raw"].get(_key(x["url"]), {}).get("pics")), x["title"] + "".join(x["snippets"]), mention)
+    state["videos"] = _pick_videos(state, mention)
     state["picked"] = picked
     state["others"] = [{"title": x["title"], "url": x["url"], "site": x["site"]} for x in allp if not x["snippets"]][:40]
     state["stats"] = {"total": len(allp), "detail": len(dedup)}
@@ -368,7 +418,7 @@ class ResultsFormatError(Exception):
 
 
 RESULTS_FORMAT = ('结果文件格式：{"source":"用的什么搜索","runs":[{"query":"搜索词","site":"站内搜索的站点，可省略",'
-                  '"pages":[{"url":"…","title":"…","content":"网页摘要或正文"}]}]}')
+                  '"pages":[{"url":"…","title":"…","content":"网页摘要或正文","pics":[{"origin_url":"图片直链","caption":"配图说明"}]}]}]}（pics 选填）')
 
 
 def load_results(path):
@@ -409,6 +459,10 @@ def first_round_jobs(plan):
         if when and not re.search(when, claim + " " + work, re.I):
             continue
         jobs.append({"label": "知识源·" + label, "site": site, "body": {"Query": ((work + " ") if work else "") + src_q, "Site": site, "Mode": 0, "Cnt": 10}})
+    subj = " ".join([work or ""] + [str(s) for s in (plan.get("subject") or [])[:1]]).strip()
+    det = " ".join(str(t) for t in plan["detail_terms"][:2] if str(t).strip() and str(t) != subj)
+    jobs.append({"label": "视频检索·B站", "site": "bilibili.com",
+                 "body": {"Query": ((subj + " " + det).strip() or claim)[:60], "Site": "bilibili.com", "Mode": 0, "Cnt": 10}})
     return jobs
 
 
@@ -569,6 +623,23 @@ def build_report(state, judge):
                      e.get("stance"), s.get("site", "?"), tl(s.get("tier", "?")), "原文一致" if e["verified"] else "⚠ 原文找不到"))
         L.append("")
 
+    pics = []
+    for x in picked:
+        for p in x.get("pics") or []:
+            if len(pics) < 12 and not any(q["origin_url"] == p["origin_url"] for q in pics):
+                pics.append(dict(p, n=x["n"], site=x["site"]))
+    vids = state.get("videos") or []
+    if pics:
+        L += ["## 相关图片", "", "来自来源网页，仅供参考，不作为查证证据。", ""]
+        for p in pics:
+            L.append("- [%d] %s%s —— [打开原图](%s)" % (p["n"], (p["caption"] or "来源页配图")[:40], "（配图，仅供参考）" if p["context_only"] else "", p["origin_url"]))
+        L.append("")
+    if vids:
+        L += ["## 相关视频", "", "B 站相关视频，仅供参考，不作为原片证据。", ""]
+        for v in vids:
+            L.append("- [%s](%s)" % (v["title"], v["url"]))
+        L.append("")
+
     G = ["flowchart TB", 'C["%s：%s"]' % ("问题" if isq else "说法", wrap(mm(plan.get("claim"), 48), 16)), 'V{{"结论：%s"}}' % mm(j["verdict"], 12)]
     done = set()
     good = [e for e in evs if e["verified"]]
@@ -615,7 +686,76 @@ def build_report(state, judge):
                          "site": by_n.get(int(e.get("id") or 0), {}).get("site"), "verified": e["verified"]} for e in evs],
            "need_clues": clues if j["verdict"] in ("查不到", "部分查到") else [], "questions": [], "reason": "", "timeline": tl_items,
            "report_path": None, "claim_review": cr}
-    return "\n".join(L), res
+    return "\n".join(L), res, build_html(state, plan, j, prof, by_n, isq, lv, pics, vids, G, tl_items, clues, bad, evs, not_found)
+
+
+def esc(t):
+    return (str(t or "").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace('"', "&quot;"))
+
+
+def build_html(state, plan, j, prof, by_n, isq, lv, pics, vids, G, tl_items, clues, bad, evs, not_found):
+    """自包含 HTML 报告：图片直接展示、视频可播放，加载失败可点原图/原链接。"""
+    tl = lambda t: prof["tier_label"].get(t, t)
+    H = ['<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">',
+         "<title>%s — 查证报告</title>" % esc(plan.get("claim", "")),
+         "<style>body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;max-width:900px;margin:24px auto;padding:0 16px;line-height:1.7;color:#222}",
+         "h1{font-size:1.5em}table{border-collapse:collapse;width:100%;margin:12px 0}td,th{border:1px solid #ddd;padding:6px 10px;font-size:14px;text-align:left}",
+         ".gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}",
+         "figure{margin:0;background:#fafafa;border:1px solid #eee;border-radius:8px;overflow:hidden;cursor:zoom-in}",
+         "figure img{width:100%;height:180px;object-fit:cover;display:block}",
+         "figcaption{font-size:12px;padding:6px 8px;color:#666;word-break:break-all}",
+         "blockquote{border-left:4px solid #f0ad4e;background:#fff8e6;margin:8px 0;padding:6px 12px}",
+         ".warn{border-color:#d9534f;background:#fdecea}",
+         ".videos iframe{width:100%;aspect-ratio:16/9;border:0;border-radius:8px}",
+         ".videos li{margin:8px 0}</style></head><body>",
+         "<h1>查证报告：%s</h1>" % esc(plan.get("claim", "")),
+         "<p><b>%s %s</b> · %s · %s · %s · %d 轮搜索 · %s</p>" % (
+             esc(j["verdict"]), "●" * lv + "○" * (5 - lv), esc(prof["name"]),
+             "问题（找答案）" if isq else "说法（核实真假）", esc(state.get("search_source", "元宝搜索 API")),
+             len(state["rounds"]), esc(state["time"]))]
+    if plan.get("assumption"):
+        H.append("<p>按这个理解查的：%s</p>" % esc(plan["assumption"]))
+    H.append("<h2>结论</h2><p>%s</p>" % esc(j.get("summary", "")))
+    if j.get("caveat"):
+        H.append("<blockquote>%s</blockquote>" % esc(j["caveat"]))
+    if bad:
+        H.append('<blockquote class="warn">⚠ 有 %d 条引用在原文中找不到，已标出，不计入结论依据。</blockquote>' % len(bad))
+    if tl_items:
+        H.append("<h2>传播时间线</h2><ul>")
+        for t in tl_items:
+            H.append("<li><b>%s</b> %s%s</li>" % (esc(t.get("date") or "时间不详"), esc(t["event"]),
+                      " " + "".join('[<a href="%s" target="_blank" rel="noopener noreferrer">%s</a>]' % (esc(by_n.get(int(c), {}).get("url", "#")), c) for c in t.get("cite") or [])))
+        H.append("</ul>")
+    if pics:
+        H.append('<h2>相关图片</h2><p style="color:#888;font-size:13px">图片来自来源网页，仅供参考，不作为查证证据。点击放大；加载失败可打开原图。</p><div class="gallery">')
+        for p in pics:
+            H.append('<figure data-src="%s"><img src="%s" alt="%s" loading="lazy" referrerpolicy="no-referrer" onerror="this.hidden=true">'
+                     '<figcaption>%s [%d] · <a href="%s" target="_blank" rel="noopener noreferrer">打开原图</a></figcaption></figure>'
+                     % (esc(p["origin_url"]), esc(p["origin_url"]), esc(p["caption"] or ""), esc((p["caption"] or "来源页配图")[:40]), p["n"], esc(p["origin_url"])))
+        H.append("</div>")
+    if vids:
+        H.append('<h2>相关视频</h2><p style="color:#888;font-size:13px">B 站相关视频，仅供参考，不作为原片证据。播放器不可用时点击标题打开。</p><ul class="videos">')
+        for v in vids:
+            embed = "https://player.bilibili.com/player.html?bvid=%s&autoplay=0" % v["id"] if v["bvid"] else "https://player.bilibili.com/player.html?aid=%s&autoplay=0" % v["id"]
+            H.append('<li><a href="%s" target="_blank" rel="noopener noreferrer">%s</a><br/><iframe src="%s" allowfullscreen scrolling="no"></iframe></li>' % (esc(v["url"]), esc(v["title"]), esc(embed)))
+        H.append("</ul>")
+    if evs:
+        H.append('<h2>证据清单</h2><table><tr><th>来源</th><th>原句</th><th>立场</th><th>核对</th></tr>')
+        for e in evs:
+            s = by_n.get(int(e.get("id") or 0), {})
+            ok = e.get("verified")
+            H.append('<tr><td><a href="%s" target="_blank" rel="noopener noreferrer">[%s] %s</a><br/><small>%s（%s）</small></td><td>「%s」</td><td>%s</td><td>%s</td></tr>'
+                     % (esc(s.get("url", "#")), esc(e.get("id")), esc(s.get("site", "?")), esc(s.get("site", "?")), esc(tl(s.get("tier", "?"))),
+                        esc(e.get("quote", "")), esc(e.get("stance")), "原文一致" if ok else '<span style="color:#d9534f">⚠ 原文找不到</span>'))
+        H.append("</table>")
+    H.append("<h2>论证图</h2><pre class=\"mermaid\">%s</pre>" % esc("\n".join(G)))
+    H.append('<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>'
+             "<script>mermaid.initialize({startOnLoad:true});(function(){document.querySelectorAll('.gallery figure').forEach(function(f){f.onclick=function(){window.open(f.dataset.src,'_blank')}})})();</script>")
+    H.append("<h2>来源列表</h2><ol>")
+    for x in state["picked"]:
+        H.append('<li><a href="%s" target="_blank" rel="noopener noreferrer">%s</a> · %s · %s</li>' % (esc(x["url"]), esc(x["title"] or x["url"]), esc(tl(x["tier"])), esc(x["site"])))
+    H.append("</ol></body></html>")
+    return "\n".join(H)
 
 
 def report_cmd(args):
@@ -627,10 +767,13 @@ def report_cmd(args):
     errs = validate_judge(j, state["plan"].get("type"))
     if errs:
         print("judge.json 有问题：\n- " + "\n- ".join(errs)); return 2
-    md, res = build_report(state, j)
+    md, res, html = build_report(state, j)
     rp = os.path.join(args.work, "report.md")
     open(rp, "w", encoding="utf-8").write(md)
+    hp = os.path.join(args.work, "report.html")
+    open(hp, "w", encoding="utf-8").write(html)
     res["report_path"] = rp
+    res["report_html_path"] = hp
     save_json(os.path.join(args.work, "result.json"), res)
     print(md)
     print("\n（报告：%s；结果：%s；status=%s；核对通过 %d / %d 句）" % (rp, os.path.join(args.work, "result.json"), res["status"],
