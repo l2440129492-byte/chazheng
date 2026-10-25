@@ -46,7 +46,7 @@ python3 scripts/credentials.py forget
 
 不要读取或展示密钥存储文件来验证成功，用 `status` 即可。输入页只保存，不会消耗搜索额度或验证密钥有效性；首次真实搜索如果报鉴权失败，让用户重新配置，不能声称保存就代表已认证。
 
-结果文件格式：`{"source":"元宝搜索 MCP","runs":[{"query":"搜索词","site":"站内搜索的站点，可省略","pages":[{"url":"…","title":"…","content":"摘要或正文"}]}]}`
+结果文件格式：`{"source":"元宝搜索 MCP","runs":[{"query":"搜索词","site":"站内搜索的站点，可省略","pages":[{"url":"…","title":"…","content":"摘要或正文","pics":[{"origin_url":"图片直链","caption":"配图说明"}]}]}]}`。`pics` 选填，搜索结果里带图片就保留，报告会展示；B 站视频链接会自动识别并嵌入报告，无需额外字段。
 
 ## 流程
 
@@ -87,7 +87,7 @@ python scripts/detective.py collect --plan plan.json --out work --results r1.jso
 
 `status` 不是 `ok` 时，脚本不搜索，直接写 `work/result.json`，你把问题或原因转告用户，到此结束。
 
-用 `--results` 时，搜索词要和 plan 一致：plan 里的每条 query 都搜一次（每次 20 条结果）；再对 `profiles.md` 里该领域的每个知识源各做一次站内搜索，搜索词用 `source_query`。
+用 `--results` 时，搜索词要和 plan 一致：plan 里的每条 query 都搜一次（每次 20 条结果）；再对 `profiles.md` 里该领域的每个知识源各做一次站内搜索，搜索词用 `source_query`；最后在 B 站站内搜一次视频（搜索词用主体+细节词）。
 
 脚本输出三部分：
 - 搜索概况
@@ -127,7 +127,7 @@ python scripts/detective.py report --work work --judge judge.json
 脚本会做三件事：
 - **逐字核对**：每条引用必须真的出现在对应编号的摘录里，对不上的标红，不算依据。
 - **结论保护**：支持结论的原句全部来自论坛时，自动降为「社区说法」。
-- 写出 `work/report.md` 和 `work/result.json`。
+- 写出 `work/report.md`、`work/report.html`（自包含网页版：来源页配图直接展示、B 站相关视频可播放、加载失败可点原图/原链接）和 `work/result.json`。
 
 ## 交付：按 result.json 的 status 回复用户
 
