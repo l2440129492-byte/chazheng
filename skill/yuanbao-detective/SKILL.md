@@ -9,16 +9,42 @@ description: 用元宝搜索查证一句流传的说法或回答一个考据问�
 
 本 Skill 不依赖特定平台或模型。你要做的判断（第 1、4、5 步）都写成固定结构的 JSON，机械步骤（第 2、3、6 步）交给 `scripts/detective.py`。脚本只用 Python 3 标准库，会校验你写的 JSON：哪个字段不对，它会直接说出来，并以退出码 2 结束。所有结构见 `references/schemas.md`。
 
-## 开始前：确定用什么搜索
+## 首次使用：宿主 AI + 搜索授权
 
-按优先级选一种，并在开头告诉用户你用的是哪种：
+**你就是本 Skill 的 LLM。** 输入检查、查询拆解、补搜计划和证据判断由当前平台的宿主大模型完成，不需要 `LLM_API_KEY`，也不要让用户另买模型服务。`plan.json` 是查证计划数据，不是平台的 Plan 模式，里面不得存密钥。
+
+按以下优先级选择搜索方式，并告诉用户本次采用哪一种：
 
 | 情况 | 怎么搜 |
 |---|---|
-| 能运行 Python，也有元宝搜索 API KEY（环境变量 `TENCENTCLOUD_WSA_APIKEY`，或当前目录 `.env` 里写 `YB_API_KEY=`） | 脚本直接调接口，不需要你搜 |
-| 已连接元宝搜索 MCP（工具 `SearchPro`） | 你调工具，把结果写成结果文件，用 `--results` 交给脚本 |
-| 只有平台自带的网页搜索工具 | 同上，用 `--results` 交给脚本。报告的「搜索来源」一栏会如实写明用的是什么，不得冒称元宝搜索 |
-| 不能运行 Python | 按 `references/judging.md` 末尾的「手工规则」完成摘句、核对和出报告 |
+| 已连接元宝搜索 MCP（工具 `SearchPro`） | 直接使用已授权工具，不重复索取密钥；结果通过 `--results` 交给脚本 |
+| 能运行 Python，有元宝搜索密钥 | 用脚本直接调接口；先按下方方式检查配置 |
+| 没有密钥但能在用户本机运行 Python | 打开一次性本地输入页，让用户自己输入，不把密钥经过模型 |
+| 只有平台自带网页搜索 | 用 `--results`，如实标记来源；不得冒称元宝搜索 |
+| 不能运行 Python | 按 `references/judging.md` 的手工规则摘句、核对和出报告 |
+
+### 配置搜索密钥（仅直接调用 API 时需要）
+
+在 Skill 目录运行（macOS/Linux 通常用 `python3`，Windows 可用 `python`）：
+
+```bash
+python3 scripts/credentials.py status
+python3 scripts/credentials.py setup
+```
+
+`status` 只返回是否配置和来源，绝不输出密钥。已有配置就继续查证；缺少配置才运行 `setup`。输入页仅绑定 `127.0.0.1` 随机端口，有一次性随机地址和请求校验，无第三方资源。提示用户在本机浏览器输入，等待命令成功结束再继续；超时/取消时停止直接 API 搜索，可改用已授权 MCP 或平台搜索。默认等 30 分钟，成功后关闭输入服务；不要反复开启多个服务。
+
+**不要用普通聊天、Plan 模式的问答框、命令参数、plan/judge 文件来收密钥。** 只有平台明确提供专用的秘密输入/密钥保管工具时，才可用它代替本地页面。Skill 无法创建跨平台通用的原生 Plan 密码框。
+
+本地输入页需用户勾选同意保存。Mac/Linux 保存到 `~/.config/yuanbao-detective/credentials.json`，目录权限 700、文件权限 600；这是明文文件，同一用户的程序仍可读取，不是系统加密钥匙串。Windows 当前不支持该受限文件存储，应使用平台密钥管理或元宝 MCP。只在调用腾讯元宝搜索接口时发送密钥，不写进项目、日志、报告或对话。更多边界和无浏览器场景见 [references/setup.md](references/setup.md)。
+
+密钥查找顺序：现有环境变量 `TENCENTCLOUD_WSA_APIKEY` / `YB_API_KEY` → 本地受限存储 → 当前目录旧 `.env`（兼容已有使用者，新用户不必编辑）。删除本地副本：
+
+```bash
+python3 scripts/credentials.py forget
+```
+
+不要读取或展示密钥存储文件来验证成功，用 `status` 即可。输入页只保存，不会消耗搜索额度或验证密钥有效性；首次真实搜索如果报鉴权失败，让用户重新配置，不能声称保存就代表已认证。
 
 结果文件格式：`{"source":"元宝搜索 MCP","runs":[{"query":"搜索词","site":"站内搜索的站点，可省略","pages":[{"url":"…","title":"…","content":"摘要或正文"}]}]}`
 
@@ -124,5 +150,5 @@ python scripts/detective.py report --work work --judge judge.json
 ## 自检
 
 ```bash
-python -m unittest discover -s tests      # 35 个测试，全部用回放数据，不调接口
+python -m unittest discover -s tests      # 查证回放与本地配置测试，不调用真实搜索接口
 ```

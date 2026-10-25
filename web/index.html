@@ -139,6 +139,15 @@ td:last-child,th:last-child,td:nth-child(3){white-space:nowrap}
 .sec.clue ul{margin:0 0 10px;padding-left:20px}
 .sec.clue textarea{background:var(--sheet)}
 td.n a{font-variant-numeric:tabular-nums;text-decoration:none;color:var(--t-wiki)}
+.work-picker{position:relative}
+.work-picker input{margin-bottom:4px}
+.work-options{position:absolute;top:100%;left:0;right:0;z-index:10;max-height:320px;overflow:auto;background:var(--sheet);border:1px solid var(--rule);border-radius:8px;box-shadow:0 8px 24px #0002;padding:5px}
+.work-options button{display:block;width:100%;text-align:left;font:inherit;color:var(--ink);background:transparent;border:0;border-radius:5px;padding:8px 10px;cursor:pointer;overflow-wrap:anywhere}
+.work-options button:hover,.work-options button[aria-selected="true"]{background:var(--paper)}
+.work-options small{display:block;color:var(--ink2);font-size:12px}
+.work-help{font-size:12px;line-height:1.6;color:var(--ink2);margin:3px 0 10px}
+#selected-works{margin:4px 0;gap:6px}
+#selected-works button{max-width:100%;overflow-wrap:anywhere;text-align:left}
 footer{margin-top:40px;font-size:12px;color:var(--mute)}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
@@ -157,8 +166,13 @@ footer{margin-top:40px;font-size:12px;color:var(--mute)}
     <div class="row">
       <div>
         <label id="worklabel">作品（可选，能提高准确度）</label>
-        <input id="work" list="works">
-        <datalist id="works"></datalist>
+        <div id="selected-works" class="chips" aria-label="已选资料"></div>
+        <div class="work-picker" id="work-picker">
+          <input id="work" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="work-options" aria-describedby="work-help" aria-labelledby="worklabel">
+          <div id="work-options" class="work-options" role="listbox" aria-label="搜索资料" hidden></div>
+        </div>
+        <p id="work-help" class="work-help">输入作品、人物或别名搜索，可跨分类多选；没有收录也可按 Enter 添加。</p>
+        <p id="work-announcement" class="status" role="status" aria-live="polite"></p>
       </div>
       <div style="flex:0"><button class="main" id="go">开始查证</button></div>
     </div>
@@ -392,6 +406,7 @@ if (typeof module !== "undefined") module.exports = ENGINE;
 </script>
 
 
+<script src="catalog.js"></script>
 <script id="profiles">
 /* ================= 领域配置：换一份配置，就是另一个领域的侦探 ================= */
 const PROFILES = {
@@ -721,10 +736,10 @@ verdict 只能选：
       `${P.workLabel.replace(/（.*$/,"")}：${work || "未指定"}\n${isQ ? "问题" : "说法"}：${claim}\n${isQ ? "要回答" : "要核实"}：${st.plan.what_to_verify || ""}${st.plan.clues ? "\n用户补充的线索：" + st.plan.clues : ""}\n\n摘录：\n${listing}`);
   }
 
-  async function run(claim, work, searchFn, say, P, clues){
+  async function run(claim, work, searchFn, say, P, clues, catalogContext){
     P = P || PROFILE;
     say("① 输入检查与拆解：能不能查、主体是什么、要核实的细节是什么……");
-    const plan = await llm("拆解", PLAN_SYS(P), `${P.workLabel.replace(/（.*$/,"")}：${work || "未指定"}\n输入：${claim}${clues ? "\n用户补充的线索：" + clues : ""}`);
+    const plan = await llm("拆解", PLAN_SYS(P), `${P.workLabel.replace(/（.*$/,"")}：${work || "未指定"}\n输入：${claim}${catalogContext ? "\n资料索引（仅用于识别名称、消歧和规划搜索，不是证据，不可引用为事实）：" + JSON.stringify(catalogContext) : ""}${clues ? "\n用户补充的线索：" + clues : ""}`);
     plan.claim = claim; plan.work = work; if (clues) plan.clues = clues;
     if (!plan.status) plan.status = "ok";
     const errs = validatePlan(plan);
@@ -839,6 +854,67 @@ verdict 只能选：
 <script>
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+// 资料索引只辅助识别主体；查证证据仍来自实际搜索结果。
+const selectedWorks = [];
+let customWorks = [];
+try { const v = JSON.parse(localStorage.getItem("yb-custom-works") || "[]"); if (Array.isArray(v)) customWorks = v.filter(e => e && typeof e.name === "string").slice(0,200); } catch(e){}
+let workCandidates = [], activeWork = -1;
+const catalogSearch = query => window.WORK_CATALOG ? window.WORK_CATALOG.search(query, PROFILE.id, customWorks) : customWorks.filter(e => e.name.toLowerCase().includes(query.toLowerCase()));
+function closeWorkOptions(){ $("#work-options").hidden = true; $("#work").setAttribute("aria-expanded","false"); $("#work").removeAttribute("aria-activedescendant"); activeWork = -1; }
+function renderSelectedWorks(){
+  const box = $("#selected-works"); box.replaceChildren();
+  selectedWorks.forEach((entry,index) => {
+    const b = document.createElement("button"); b.type = "button"; b.className = "chip";
+    b.textContent = entry.name + " ×"; b.setAttribute("aria-label", "移除 " + entry.name);
+    b.onclick = () => { selectedWorks.splice(index,1); renderSelectedWorks(); $("#work").focus(); };
+    box.appendChild(b);
+  });
+}
+function addWork(entry){
+  if (!selectedWorks.some(e => e.name.toLowerCase() === entry.name.toLowerCase())) selectedWorks.push(entry);
+  renderSelectedWorks(); $("#work").value = ""; closeWorkOptions();
+  $("#work-announcement").textContent = "已选择 " + entry.name + "，共 " + selectedWorks.length + " 项。";
+}
+function addWorkByName(name){
+  const value = name.trim().slice(0,160); if (!value) return;
+  const match = catalogSearch(value).find(e => e.name.toLowerCase() === value.toLowerCase() || (e.aliases||[]).some(a => a.toLowerCase() === value.toLowerCase()));
+  if (match) return addWork(match);
+  let entry = customWorks.find(e => e.name.toLowerCase() === value.toLowerCase());
+  if (!entry){ entry = {id:"custom-" + Date.now(),name:value,aliases:[],characters:[],versions:[],profiles:[],sources:[]}; customWorks.push(entry); customWorks = customWorks.slice(-200); try { localStorage.setItem("yb-custom-works",JSON.stringify(customWorks)); } catch(e){} }
+  addWork(entry);
+}
+function workSelectionText(){ return [...new Set([...selectedWorks.map(e => e.name), $("#work").value.trim()].filter(Boolean))].join("、"); }
+function showWorkOptions(){
+  const input = $("#work"), box = $("#work-options"), query = input.value.trim();
+  workCandidates = catalogSearch(query).filter(e => !selectedWorks.some(s => s.name === e.name)).slice(0,10);
+  box.replaceChildren(); activeWork = -1;
+  workCandidates.forEach((entry,index) => {
+    const b = document.createElement("button"); b.type = "button"; b.role = "option"; b.id = "work-option-" + index; b.setAttribute("aria-selected","false");
+    b.textContent = entry.name;
+    const meta = document.createElement("small"); meta.textContent = [...(entry.aliases||[]).slice(0,3), ...(entry.characters||[]).slice(0,3), ...(entry.versions||[]).slice(0,2)].join(" · "); b.appendChild(meta);
+    b.onmousedown = e => e.preventDefault(); b.onclick = () => { addWork(entry); input.focus(); }; box.appendChild(b);
+  });
+  if (query && !workCandidates.some(e => e.name.toLowerCase() === query.toLowerCase())){
+    const b = document.createElement("button"); b.type = "button"; b.role = "option"; b.id = "work-option-" + workCandidates.length; b.setAttribute("aria-selected","false");
+    b.textContent = (workCandidates.length ? "手动添加：" : "没有匹配资料，添加：") + query; b.onmousedown = e => e.preventDefault(); b.onclick = () => { addWorkByName(query); input.focus(); }; box.appendChild(b);
+  }
+  box.hidden = !box.children.length; input.setAttribute("aria-expanded",String(!box.hidden)); input.removeAttribute("aria-activedescendant");
+}
+$("#work").addEventListener("input", showWorkOptions);
+$("#work").addEventListener("focus", showWorkOptions);
+$("#work").addEventListener("keydown", e => {
+  const box = $("#work-options"), options = [...box.children];
+  if (e.key === "Escape"){ closeWorkOptions(); return; }
+  if (e.key === "ArrowDown" || e.key === "ArrowUp"){
+    e.preventDefault(); if (box.hidden) showWorkOptions(); const opts = [...box.children]; if (!opts.length) return;
+    activeWork = (activeWork + (e.key === "ArrowDown" ? 1 : -1) + opts.length) % opts.length;
+    opts.forEach((b,i) => b.setAttribute("aria-selected", String(i === activeWork))); $("#work").setAttribute("aria-activedescendant",opts[activeWork].id); opts[activeWork].scrollIntoView({block:"nearest"});
+  } else if (e.key === "Enter"){
+    e.preventDefault(); if (!box.hidden && activeWork >= 0 && options[activeWork]) options[activeWork].click(); else addWorkByName($("#work").value);
+  } else if (e.key === "Tab") closeWorkOptions();
+});
+document.addEventListener("click",e => { if (!$("#work-picker").contains(e.target)) closeWorkOptions(); });
+
 function setProfile(id){
   PROFILE = PROFILES[id] || PROFILES.acg;
   try { localStorage.setItem("yb-profile", PROFILE.id); } catch(e){}
@@ -846,11 +922,11 @@ function setProfile(id){
   $("#ptitle").textContent = PROFILE.title; $("#pintro").textContent = PROFILE.intro;
   $("#worklabel").textContent = PROFILE.workLabel; $("#work").placeholder = PROFILE.workPlaceholder;
   $("#claim").placeholder = PROFILE.claimPlaceholder;
-  $("#works").innerHTML = PROFILE.works.map(w => `<option>${esc(w)}</option>`).join("");
+  closeWorkOptions();
   $("#examples").innerHTML = "";
   PROFILE.examples.forEach(([w,c]) => {
     const b = document.createElement("button"); b.className = "chip"; b.textContent = c;
-    b.onclick = () => { $("#claim").value = c; $("#work").value = w; $("#claim").focus(); };
+    b.onclick = () => { $("#claim").value = c; $("#work").value = ""; if (w) addWorkByName(w); $("#claim").focus(); };
     $("#examples").appendChild(b);
   });
   document.querySelectorAll("#tabs button").forEach(b => b.setAttribute("aria-selected", b.dataset.id === PROFILE.id));
@@ -868,8 +944,9 @@ let HAS_LLM = false;
 function refreshStatus(extra){
   fetch("/api/status").then(r=>r.json()).then(s=>{
     HAS_LLM = !!s.llm;
+    if (s.key === false) { $("#status").textContent = "⚠ 本地服务已连接 · 尚未配置元宝搜索，请填写 web/.env 中的 YB_API_KEY 后重启服务"; return; }
     $("#status").textContent = `本地服务已连接 · ${s.llm ? "侦探模式（元宝搜索 + " + s.model + " 读原句）" : "规则模式（未配置大模型）"} · 本次启动共调用元宝搜索 ${s.calls} 次` + (extra ? " · " + extra : "");
-  }).catch(()=>{ $("#status").textContent = "⚠ 连不上本地服务，请先双击「启动考据侦探.bat」"; });
+  }).catch(()=>{ $("#status").textContent = "⚠ 连不上本地服务，请先双击「启动考据侦探.command」（Mac）或「启动考据侦探.bat」（Windows）"; });
 }
 refreshStatus();
 
@@ -1132,7 +1209,8 @@ function progressUI(){
 }
 
 $("#go").onclick = async () => {
-  const claim = $("#claim").value.trim(), work = $("#work").value.trim();
+  const claim = $("#claim").value.trim(), work = workSelectionText();
+  closeWorkOptions();
   if (!claim) return $("#claim").focus();
   $("#go").disabled = true;
   const ui = progressUI(); const say = s => ui.say(s);
@@ -1140,7 +1218,7 @@ $("#go").onclick = async () => {
   if (HAS_LLM){
     try{
       const clues = window.__clues || ""; window.__clues = "";
-      const r = await DETECTIVE.run(claim, work, search, say, PROFILE, clues);
+      const r = await DETECTIVE.run(claim, work, search, say, PROFILE, clues, selectedWorks.map(({name,aliases,characters,versions}) => ({name,aliases,characters,versions})));
       if (r.gate){ ui.stop(); renderGate(r); return; }
       r.time = new Date().toLocaleString("zh-CN");
       ui.finish();

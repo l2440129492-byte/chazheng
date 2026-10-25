@@ -12,6 +12,12 @@
 | 名言·文史 | 孔子主张以德报怨？《兰亭序》真迹陪葬昭陵？ |
 | 热梗 | 676767 是什么梗？“I am inevitable”为什么成了梗？ |
 
+## 搜索与补充相关资料
+
+网页版的作品/人物/典籍输入支持搜索、多个选择和自由补充。可按名称、别名、角色、版本查找，分类之间共享同一资料库；切换分类不会丢失已选项。没有匹配项时可手动添加，补充项仅保存到当前浏览器本地，并不上传或修改全局资料。
+
+共享基础条目维护在 `web/catalog.js`，只提供检索上下文，不作为事实证据。作品原文和剧情结论仍须通过搜索与引用核对。
+
 ## 怎么做到「信得过」
 
 1. **输入检查**：说法太模糊、指代不清，或者是观点题，先问清楚；涉及时政或个人隐私的，不查。
@@ -35,15 +41,20 @@ HANDOFF.md  交接文档：现状、架构、决策、待办，接手前先读�
 
 ## 快速开始
 
+**网页版（Mac，Node.js 18+）**
+1. 双击 `web/启动考据侦探.command`，首次会自动创建 `web/.env`，并打开页面。
+2. 在 `web/.env` 填入 `YB_API_KEY` 和 `LLM_API_KEY`，停止后重新启动服务，即可真实查证。未配置密钥时可以浏览页面。
+3. 也可在仓库根目录运行 `node web/server.cjs`，打开 `http://127.0.0.1:8765`。Linux 同样适用。默认端口被占用时会尝试接下来的 10 个端口，以启动日志中的地址为准。服务只监听本机，按 Control+C 停止；可通过 `PORT` 更换端口。
+
 **网页版（Windows）**
 1. 把 `web/.env.example` 复制成 `web/.env`，填入元宝搜索 API KEY 和 DeepSeek key。
 2. 双击 `web/启动考据侦探.bat`，浏览器打开 `http://localhost:8765`。
 
-**Skill 版**：见 `skill/yuanbao-detective/SKILL.md`。
+**Skill 版**：见 `skill/yuanbao-detective/SKILL.md`。直接使用宿主 AI，无需 LLM 密钥；已连接元宝搜索 MCP 可直接用。Mac/Linux 首次直连搜索时在 Skill 目录运行 `python3 scripts/credentials.py setup`，通过本地密码输入页保存搜索密钥，无需手写配置文件。密钥存于用户目录的受限明文文件，详见 Skill 说明。
 
 **测试**
 ```bash
 python -m unittest discover -s skill/yuanbao-detective/tests   # 35 个
-node --test web/tests/web.test.js                              # 9 个
+node --test web/tests/*.test.js                              # 9 个
 node web/tests/ui.e2e.js                                       # 4 个，需要 playwright
 ```

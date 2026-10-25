@@ -87,6 +87,9 @@ while ($listener.IsListening) {
     if ($req.HttpMethod -eq "GET" -and ($path -eq "/" -or $path -eq "/index.html")) {
       Send $res 200 ([IO.File]::ReadAllText((Join-Path $dir "index.html"), [Text.Encoding]::UTF8)) "text/html; charset=utf-8"
     }
+    elseif ($req.HttpMethod -eq "GET" -and $path -eq "/catalog.js") {
+      Send $res 200 ([IO.File]::ReadAllText((Join-Path $dir "catalog.js"), [Text.Encoding]::UTF8)) "text/javascript; charset=utf-8"
+    }
     elseif ($path -eq "/api/status") {
       Send $res 200 (J @{ key = $true; llm = [bool]$llmKey; model = $llmModel; calls = $script:calls; server = "powershell" }) "application/json; charset=utf-8"
     }

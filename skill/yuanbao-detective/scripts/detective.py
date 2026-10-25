@@ -76,16 +76,10 @@ def tier_of(url, site, prof):
 
 # ---------------------------------------------------------------- 搜索
 def api_key():
-    k = os.environ.get("TENCENTCLOUD_WSA_APIKEY") or os.environ.get("YB_API_KEY")
+    import credentials
+    k, _ = credentials.resolve_key()
     if not k:
-        env = os.path.join(os.getcwd(), ".env")
-        if os.path.exists(env):
-            for line in open(env, encoding="utf-8-sig"):
-                m = re.match(r"\s*(YB_API_KEY|TENCENTCLOUD_WSA_APIKEY)\s*=\s*(.+)", line)
-                if m:
-                    k = m.group(2).strip()
-    if not k:
-        sys.exit("没有找到元宝搜索密钥：请设置环境变量 TENCENTCLOUD_WSA_APIKEY")
+        sys.exit("没有找到元宝搜索密钥：请运行 python3 scripts/credentials.py setup，通过本地输入页配置（不要在聊天中粘贴密钥）")
     return k
 
 
