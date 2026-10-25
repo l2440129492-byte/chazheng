@@ -196,7 +196,7 @@ class TestReport(unittest.TestCase):
         j.update(kw); return j
 
     def test_completed_report_and_result(self):
-        md, res = D.build_report(self.state, self.judge())
+        md, res, _html = D.build_report(self.state, self.judge())
         self.assertEqual(res["status"], "completed")
         self.assertTrue(res["evidence"][0]["verified"])
         self.assertIn("## 证据清单", md)
@@ -205,19 +205,19 @@ class TestReport(unittest.TestCase):
 
     def test_fabricated_quote_flagged(self):
         j = self.judge(evidence=[{"id": self.wiki_n, "quote": "孔子大力提倡以德报怨", "stance": "支持"}])
-        md, res = D.build_report(self.state, j)
+        md, res, _html = D.build_report(self.state, j)
         self.assertFalse(res["evidence"][0]["verified"])
         self.assertIn("原文找不到", md)
 
     def test_downgrade_when_only_community_supports(self):
         zh = [x["n"] for x in self.state["picked"] if "zhihu" in x["url"]][0]
         j = self.judge(verdict="有出处", evidence=[{"id": zh, "quote": "很多人以为以德报怨是孔子说的", "stance": "支持"}])
-        _, res = D.build_report(self.state, j)
+        _, res, _html = D.build_report(self.state, j)
         self.assertEqual(res["verdict"], "社区说法")
 
     def test_not_found_lists_tried_searches_and_clues(self):
         j = self.judge(verdict="查不到", evidence=[], need_clues=["你在哪里看到这句话"])
-        md, res = D.build_report(self.state, j)
+        md, res, _html = D.build_report(self.state, j)
         self.assertEqual(res["status"], "not_found")
         self.assertEqual(res["need_clues"], ["你在哪里看到这句话"])
         self.assertIn("## 试过的搜索", md)
@@ -225,7 +225,7 @@ class TestReport(unittest.TestCase):
         self.assertIn("## 需要你提供的线索", md)
 
     def test_not_found_without_clues_gets_default_clues(self):
-        _, res = D.build_report(self.state, self.judge(verdict="查不到", evidence=[], need_clues=[]))
+        _, res, _html = D.build_report(self.state, self.judge(verdict="查不到", evidence=[], need_clues=[]))
         self.assertGreaterEqual(len(res["need_clues"]), 2)
 
     def test_judge_validation(self):
@@ -257,7 +257,7 @@ class TestMemeProfile(unittest.TestCase):
         j = {"verdict": "查到答案", "summary": "源自 Skrilla 的歌[1]。", "true_points": [], "false_points": [], "unknown_points": [],
              "warrant": "w", "evidence": [{"id": 1, "quote": "comes from the song Doot Doot (6 7) by Skrilla", "stance": "支持"}],
              "caveat": "", "need_clues": [], "timeline": [{"date": "2024-12", "event": "Skrilla 发布歌曲 Doot Doot (6 7)", "cite": [1]}]}
-        md, res = D.build_report(st, j)
+        md, res, _html = D.build_report(st, j)
         self.assertIn("## 传播时间线", md)
         self.assertIn("2024-12", md)
         self.assertEqual(res["timeline"][0]["date"], "2024-12")
@@ -320,3 +320,44 @@ class TestEndToEndReplay(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestMedia(unittest.TestCase):
+    def media_runs(self):
+        pic_page = page("https://knowyourmeme.com/memes/67", "67 Meme",
+                        "The 67 meme comes from the song Doot Doot by Skrilla, a basketball trend.")
+        pic_page["pics"] = [{"origin_url": "https://img.kym-cdn.com/67.jpg", "caption": "67 handshake meme"},
+                            {"origin_url": "https://img.kym-cdn.com/logo.png", "caption": "网站logo"},
+                            {"origin_url": "https://img.kym-cdn.com/banner.jpg", "caption": "67 banner"}]
+        bil = page("https://www.bilibili.com/video/BV1GGHj6REow", "67 是什么梗 讲解", "67 six seven 迷因 讲解视频")
+        return [{"label": "q", "query": "q", "pages": [pic_page, bil]}]
+
+    def media_plan(self):
+        return ok_plan(profile="meme", claim="676767 是什么梗？", work="", type="question", subject=["676767"],
+                       detail_terms=["67", "six seven", "迷因"], queries=["676767 是什么梗"])
+
+    def test_pics_filtered_and_kept(self):
+        st = D.build_state(self.media_plan(), self.media_runs(), round_no=1)
+        src = [x for x in st["picked"] if "kym-cdn" in str(x.get("pics"))]
+        self.assertTrue(src)
+        kept = src[0]["pics"]
+        urls = [p["origin_url"] for p in kept]
+        self.assertIn("https://img.kym-cdn.com/67.jpg", urls)
+        self.assertNotIn("https://img.kym-cdn.com/logo.png", urls)
+
+    def test_bilibili_video_extracted(self):
+        st = D.build_state(self.media_plan(), self.media_runs(), round_no=1)
+        self.assertEqual(len(st.get("videos") or []), 1)
+        self.assertEqual(st["videos"][0]["bvid"], True)
+
+    def test_html_report_contains_gallery_and_player(self):
+        st = D.build_state(self.media_plan(), self.media_runs(), round_no=1)
+        j = {"verdict": "查到答案", "summary": "出自 Skrilla 的歌[1]。", "true_points": [], "false_points": [], "unknown_points": [],
+             "warrant": "w", "evidence": [{"id": st["picked"][0]["n"], "quote": st["picked"][0]["snippets"][0][:20], "stance": "支持"}],
+             "caveat": "", "need_clues": []}
+        md, res, html = D.build_report(st, j)
+        self.assertIn("## 相关图片", md)
+        self.assertIn("## 相关视频", md)
+        self.assertIn('class="gallery"', html)
+        self.assertIn("player.bilibili.com", html)
+        self.assertIn("打开原图", html)
